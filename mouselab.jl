@@ -50,6 +50,7 @@ struct Problem
     prm::Params
     matrix::Matrix{Float64}
     weights::Vector{Float64}
+    cost::Matrix{Float64}
 end
 Problem(prm::Params) = begin
     @unpack reward_dist, n_outcome, n_gamble = prm
@@ -57,7 +58,8 @@ Problem(prm::Params) = begin
     Problem(
         prm,
         reshape(rs, n_outcome, n_gamble),
-        weights(prm)
+        weights(prm),
+        prm.cost * ones(n_outcome, n_gamble)
         # rand(Dirichlet(dispersion * ones(n_outcome
     )
 end
@@ -69,14 +71,14 @@ computations(p::Problem) = 0:prod(size(p.matrix))
 struct Belief
     matrix::Matrix{Distribution}
     weights::Vector{Float64}
-    cost::Float64
+    cost::Matrix{Float64}
 end
 "Initial belief for a given problem."
 Belief(p::Problem) = begin
     Belief(
         [p.prm.reward_dist for i in 1:p.prm.n_outcome, j in 1:p.prm.n_gamble],
         p.weights,
-        p.prm.cost
+        p.cost
     )
 end
 Base.show(io::IO, mime::MIME"text/plain", b::Belief) = begin
@@ -89,18 +91,18 @@ end
 term_reward(b::Belief) = maximum(b.weights' * mean.(b.matrix))
 
 "Update a belief by observing the true value of a cell."
-function observe!(b::Belief, p::Problem, i::Int)
-    @assert b.matrix[i].σ > 1e-10
-    b.matrix[i] = Normal(p.matrix[i], 1e-20)
+function observe!(b::Belief, p::Problem, c::Int)
+    @assert b.matrix[c].σ > 1e-10
+    b.matrix[c] = Normal(p.matrix[c], 1e-20)
 end
 
 "Update a belief by sampling the value of a cell."
-function observe!(b::Belief, i::Int)
-    @assert b.matrix[i].σ > 1e-10
-    val = rand(b.matrix[i])
+function observe!(b::Belief, c::Int)
+    @assert b.matrix[c].σ > 1e-10
+    val = rand(b.matrix[c])
     # Belief.matrix contains only Normals, so we represent certainty
     # with an extremeley low variance.
-    b.matrix[i] = Normal(val, 1e-20)
+    b.matrix[c] = Normal(val, 1e-20)
 end
 
 "Returns a new Belief after sampling the value of a cell"
@@ -248,7 +250,7 @@ end
 "Selects a computation to perform in a given belief.
     e.g. Policy(θ)(b) -> c
 "
-voc(π, b) = (π.θ' * features(b; skip=π.θ[2:end] .== 0.))' .- b.cost
+voc(π, b) = (π.θ' * features(b; skip=π.θ[2:end] .== 0.))' .- b.cost[:]
 (π::Policy)(b::Belief) = begin
     # voc = (π.θ' * features(b; skip=π.θ[2:end] .== 0.))' .- b.cost
     noise = 1e-10 * rand(length(b.matrix))
@@ -257,18 +259,20 @@ voc(π, b) = (π.θ' * features(b; skip=π.θ[2:end] .== 0.))' .- b.cost
     v <= 0 ? TERM : c
 end
 
+MetaGreedy() = Policy([0., 1, 0, 0, 0])
+
 "Runs a Policy on a Problem."
 function rollout(π::Policy, p::Problem; initial_belief=nothing, max_steps=100, callback=((b, c) -> nothing))
     b = initial_belief != nothing ? initial_belief : Belief(p)
-    reward = 0
+    total_cost = 0
     for step in 1:max_steps
         c = (step == max_steps) ? TERM : π(b)
         callback(b, c)
         if c == TERM
-            reward += term_reward(b)
-            return (belief=b, reward=reward, n_steps=step)
+            reward = term_reward(b) - total_cost
+            return (belief=b, reward=reward, total_cost=total_cost, n_steps=step)
         else
-            reward -= p.prm.cost
+            total_cost += p.prm.cost
             observe!(b, p, c)
         end
     end
@@ -277,7 +281,7 @@ end
 "Runs a Policy starting with a given belief."
 function rollout(π::Policy, b::Belief, max_steps=100, belief_log=nothing)
     b = deepcopy(b)
-    reward = 0
+    total_cost = 0
     computations = []
     for step in 1:max_steps
         if belief_log != nothing
@@ -286,11 +290,11 @@ function rollout(π::Policy, b::Belief, max_steps=100, belief_log=nothing)
         c = (step == max_steps) ? TERM : π(b)
         push!(computations, c)
         if c == TERM
-            reward += term_reward(b)
+            reward = term_reward(b) - total_cost
             return (belief=b, reward=reward, n_steps=step, computations=computations,
                     belief_log=belief_log)
         else
-            reward -= b.cost
+            total_cost += b.cost
             observe!(b, c)
         end
     end
