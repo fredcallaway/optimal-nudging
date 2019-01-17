@@ -1,6 +1,6 @@
 using Parameters
 using Distributions
-
+using Printf
 import Base
 
 const TERM = 0  # termination action
@@ -14,23 +14,8 @@ const N_FEATURE = 5
     n_gamble::Int = 7
     n_outcome::Int = 4
     reward_dist::Normal = Normal(0, 1)
-    compensatory::Bool = true
+    weight_alpha::Float64 = 1
     cost::Float64 = 0.01
-end
-
-
-function weights(prm::Params)
-    function sample_p()
-        x = [0; rand(prm.n_outcome - 1); 1]
-        sort!(x)
-        p = diff(x)
-    end
-    cond = prm.compensatory ? (x -> all(0.1 .<= x .<= 0.4)) : (x -> maximum(x) >= 0.85)
-    p = sample_p()
-    while !cond(p)
-        p = sample_p()
-    end
-    p
 end
 
 exp_dist(min, max) = begin
@@ -59,10 +44,23 @@ Problem(prm::Params) = begin
     Problem(
         prm,
         reshape(rs, n_outcome, n_gamble),
-        weights(prm),
+        rand(Dirichlet(ones(n_outcome) * prm.weight_alpha)),
         prm.cost * ones(n_outcome, n_gamble)
         # rand(Dirichlet(dispersion * ones(n_outcome
     )
+end
+function Base.show(io::IO, mime::MIME"text/plain", p::Problem)
+    println("Problem")
+    n_row, n_col = size(p.matrix)
+    println("     __", "_" ^ (7 * n_col))
+    for i in 1:n_row
+        @printf "%2d %% ||" p.weights[i] * 100
+        for j in 1:n_col
+            @printf " %1.2f |" p.matrix[i, j]
+        end
+        println()
+    end
+    # println("      --", "-" ^ (7 * n_col))
 end
 computations(p::Problem) = 0:prod(size(p.matrix))
 
@@ -82,12 +80,28 @@ Belief(p::Problem) = begin
         p.cost
     )
 end
-Base.show(io::IO, mime::MIME"text/plain", b::Belief) = begin
-    X = map(b.matrix) do d
-        d.σ < 1e-10 ? round(d.μ; digits=2) : 0
+function show_belief(b::Belief, c=0)
+    println("Belief")
+    ci, cj = c > 0 ? get_index(b, c) : (-1, -1)
+    n_row, n_col = size(b.matrix)
+    println("     __", "_" ^ (7 * n_col))
+    for i in 1:n_row
+        @printf "%2d %% ||" b.weights[i] * 100
+        for j in 1:n_col
+            d = b.matrix[i, j]
+            if i == ci && j == cj
+                print("  XX  |")
+            elseif d.σ > 1e-10
+                @printf " _%2d_ |" (j-1)*n_row + i
+            else
+                @printf " %1.2f |" d.μ
+            end
+        end
+        println()
     end
-    show(io, mime, X)
+    # println("      --", "-" ^ (7 * n_col))
 end
+Base.show(io::IO, mime::MIME"text/plain", b::Belief) = show_belief(b)
 "Expected value of terminating computation with a given belief."
 term_reward(b::Belief) = maximum(b.weights' * mean.(b.matrix))
 
@@ -122,6 +136,7 @@ function gamble_values(b::Belief)::Vector{Normal{Float64}}
 end
 
 get_index(b::Belief, c::Int) = Tuple(CartesianIndices(size(b.matrix))[c])
+get_index(p::Problem, c::Int) = Tuple(CartesianIndices(size(p.matrix))[c])
 
 # =================== Features =================== #
 
