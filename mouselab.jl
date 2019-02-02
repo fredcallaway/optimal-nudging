@@ -111,6 +111,12 @@ function observe!(b::Belief, p::Problem, c::Int)
     b.matrix[c] = Normal(p.matrix[c], 1e-20)
 end
 
+function observe(b::Belief, p::Problem, c::Int)::Belief
+    b1 = deepcopy(b)
+    observe!(b1, p, c)
+    b1
+end
+
 "Update a belief by sampling the value of a cell."
 function observe!(b::Belief, c::Int)
     @assert b.matrix[c].σ > 1e-10
@@ -276,6 +282,20 @@ voc(π, b) = (π.θ' * features(b; skip=π.θ[2:end] .== 0.))' .- b.cost[:]
 end
 
 MetaGreedy() = Policy([0., 1, 0, 0, 0])
+
+
+function softmax(x)
+    ex = exp.(x .- maximum(x))
+    ex ./= sum(ex)
+    ex
+end
+
+choice_probs(b::Belief) = softmax(1e20 * b.weights' * mean.(b.matrix))[:]
+
+function true_term_reward(p::Problem, b::Belief)
+    choice_vals = p.weights' * p.matrix
+    choice_vals * choice_probs(b)
+end
 
 # this is the one matt has changed
 "Runs a Policy on a Problem."
