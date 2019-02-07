@@ -1,4 +1,5 @@
 include("mouselab.jl")
+const _meta_greedy = Policy([0,1,0,0,0])
 
 function choice_probs(pol::Policy, prob::Problem)
     @assert false "this is incorrect! See function below for reference"
@@ -42,6 +43,7 @@ function expected_reward(pol::Policy, prob::Problem)
     @assert total_p ≈ 1 "total_p = $total_p"
     return value
 end
+expected_reward(prob::Problem) = expected_reward(_meta_greedy, prob)
 
 # %% ====================  ====================
 # prm = Params(n_gamble=6, n_outcome=4, cost=0.01)
