@@ -52,11 +52,30 @@ end
 function Base.show(io::IO, mime::MIME"text/plain", p::Problem)
     println("Problem")
     n_row, n_col = size(p.matrix)
-    println("     __", "_" ^ (7 * n_col))
+    println("     __", "_" ^ (8 * n_col))
     for i in 1:n_row
         @printf "%2d %% ||" p.weights[i] * 100
         for j in 1:n_col
-            @printf " %1.2f |" p.matrix[i, j]
+            @printf " %+1.2f |" p.matrix[i, j]
+        end
+        println()
+    end
+    # println("      --", "-" ^ (7 * n_col))
+end
+
+function show_cost(p::Problem)
+    println("Problem")
+    n_row, n_col = size(p.matrix)
+    println("     __", "_" ^ (8 * n_col))
+    for i in 1:n_row
+        @printf "%2d %% ||" p.weights[i] * 100
+        for j in 1:n_col
+            @printf " %+1.2f |" p.matrix[i, j]
+        end
+        println()
+        print("     ||")
+        for j in 1:n_col
+            @printf " %.3f |" p.cost[i, j]
         end
         println()
     end
@@ -311,34 +330,11 @@ function rollout(π::Policy, p::Problem; initial_belief=nothing, max_steps=100, 
             reward = term_reward(b) - total_cost
             choice = argmax(p.weights' * mean.(b.matrix))[2]
             actual_ev = (p.weights' * p.matrix[:,choice]) - total_cost
-            return (belief=b, user_expected_reward=reward, total_cost=total_cost, n_steps=step,
-            choice=choice, assistant_expected_reward = actual_ev,computation_log=computation_log)
+            return (user_expected_reward=reward, total_cost=total_cost, n_steps=step, choice=choice,
+                    assistant_expected_reward=actual_ev, computation_log=computation_log, belief=b)
         else
             total_cost += p.cost[c]
             observe!(b, p, c)
-        end
-    end
-end
-
-
-"Runs a Policy starting with a given belief."
-function rollout(π::Policy, b::Belief, max_steps=100, belief_log=nothing)
-    b = deepcopy(b)
-    total_cost = 0
-    computations = []
-    for step in 1:max_steps
-        if belief_log != nothing
-            push!(belief_log, copy(b.matrix))
-        end
-        c = (step == max_steps) ? TERM : π(b)
-        push!(computations, c)
-        if c == TERM
-            reward = term_reward(b) - total_cost
-            return (belief=b, reward=reward, n_steps=step, computations=computations,
-                    belief_log=belief_log)
-        else
-            total_cost += b.cost
-            observe!(b, c)
         end
     end
 end
