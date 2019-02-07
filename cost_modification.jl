@@ -10,16 +10,27 @@ function modify_cost!(prob::Problem, select::Vector{Bool}, f::Function)
     return undo!
 end
 
+function sale!(prob, select; budget::Float64=0.1)
+    sale_per_cell = budget / sum(select)
+    modify_cost!(prob, select, cost -> max(0, cost - sale_per_cell))
+end
+
 function make_loss(prob::Problem; budget::Float64=0.1)
     return (select::Vector{Bool}) -> begin
         sale_per_cell = budget / sum(select)
-        undo! = modify_cost!(prob, select, cost -> max(0, cost - sale_per_cell))
+        undo! = sale!(prob, select; budget=budget)
         er = expected_reward(meta_greedy, prob)
         undo!()
         return -er
     end
 end
 
+function advertise!(prob::Problem; factor::Float64=2.)
+    for col in 1:size(prob.matrix, 2)
+        row = argmax(prob.matrix[:, col])
+        prob.cost[row, col] /= 2
+    end
+end
 
 # %% ==================== Heuristic strategies ====================
 
