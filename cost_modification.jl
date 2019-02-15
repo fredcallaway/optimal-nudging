@@ -3,7 +3,7 @@ include("metrics.jl")
 
 const meta_greedy = Policy([0,1,0,0,0])
 
-function modify_cost!(prob::Problem, select::Vector{Bool}, f::Function)
+function modify_cost!(prob::Problem, select, f::Function)
     old = prob.cost[select]  # copys data (not a view)
     prob.cost[select] .= f.(prob.cost[select])
     undo!() = prob.cost[select] .= old  # this is silly
@@ -14,14 +14,26 @@ function sale!(prob, select; budget::Float64=0.1)
     sale_per_cell = budget / sum(select)
     modify_cost!(prob, select, cost -> max(0, cost - sale_per_cell))
 end
+function sale(prob, select; budget=0.1)
+    prob = deepcopy(prob)
+    sale!(prob, select; budget=budget)
+    prob
+end
 
-function make_loss(prob::Problem; budget::Float64=0.1)
-    return (select::Vector{Bool}) -> begin
+function make_objective(prob::Problem, pol=meta_greedy; budget::Float64=0.1, n=nothing)
+    return (select::BitVector) -> begin
         sale_per_cell = budget / sum(select)
         undo! = sale!(prob, select; budget=budget)
-        er = expected_reward(meta_greedy, prob)
+        er = n != nothing ? expected_reward(pol, prob, n=n) : expected_reward(pol, prob)
         undo!()
-        return -er
+        return er
+    end
+end
+
+function make_loss(prob::Problem; budget::Float64=0.1)
+    objective = make_objective(prob; budget=budget)
+    return (select::BitVector) -> begin
+        return -objective(select)
     end
 end
 
@@ -36,9 +48,9 @@ end
 
 "Puts the highest-value cell of the best choice on sale"
 function best_cell_select(prob::Problem)
-    select = zeros(Bool, length(prob.cost))
+    select = falses(length(prob.cost))
     best_col = argmax((prob.weights' * prob.matrix)[:])
-    best_row = argmax(prob.matrix[:, best_col])
+    best_row = argmax(prob.weights .* prob.matrix[:, best_col])
     best_cell = reshape(1:length(prob.matrix), size(prob.matrix))[best_row, best_col]
     select[best_cell] = true
     select
@@ -46,19 +58,19 @@ end
 
 "Greedily searches for cells to put on sale"
 function greedy_select(prob::Problem; init=false)
-    loss = make_loss(prob)
-    x = fill(init, length(prob.cost))
-    current_loss = loss(x)
+    objective = make_objective(prob; n=10000)
+    x = BitVector(fill(init, length(prob.cost)))
+    best = objective(x)
     try_flip(i) = begin
         x[i] = !x[i]
-        l = loss(x)
+        l = objective(x)
         x[i] = !x[i]
         return l
     end
     while true
-        new_loss, i = findmin(try_flip.(1:length(x)))
-        if new_loss < current_loss
-            current_loss = new_loss
+        obj, i = findmax(try_flip.(1:length(x)))
+        if obj > best
+            best = obj
             x[i] = !x[i]
         else
             break

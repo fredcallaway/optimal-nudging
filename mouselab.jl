@@ -2,6 +2,7 @@ using Parameters
 using Distributions
 using Printf
 import Base
+using StatsBase: sample, Weights
 
 const TERM = 0  # termination action
 # const NULL_FEATURES = -1e10 * ones(4)  # features for illegal computation
@@ -284,14 +285,24 @@ function features(b::Belief; skip=falses(4))
 end
 
 # ========== Policy ========== #
+
 "A metalevel policy that uses the BMPS features"
 struct Policy
     θ::Vector{Float64}
 end
-"Selects a computation to perform in a given belief.
-    e.g. Policy(θ)(b) -> c
-"
+struct NoisyPolicy
+    θ::Vector{Float64}
+    α::Float64
+end
+struct NoisyMetaGreedy
+    α::Float64
+end
+
 voc(π, b) = (π.θ' * features(b; skip=π.θ[2:end] .== 0.))' .- b.cost[:]
+
+"Selects a computation to perform in a given belief.
+e.g. Policy(θ)(b) -> c
+"
 (π::Policy)(b::Belief) = begin
     # voc = (π.θ' * features(b; skip=π.θ[2:end] .== 0.))' .- b.cost
     noise = 1e-10 * rand(length(b.matrix))
@@ -300,14 +311,22 @@ voc(π, b) = (π.θ' * features(b; skip=π.θ[2:end] .== 0.))' .- b.cost[:]
     v <= 0 ? TERM : c
 end
 
-MetaGreedy() = Policy([0., 1, 0, 0, 0])
-
+(π::NoisyPolicy)(b::Belief) = softmax(π.α * [0; voc(π, b)]) - 1
 
 function softmax(x)
     ex = exp.(x .- maximum(x))
     ex ./= sum(ex)
     ex
 end
+
+(π::NoisyMetaGreedy)(b::Belief) = begin
+    v1 = [observed(b, c) ? -Inf : voi1(b, c) - b.cost[c]
+          for c in 1:length(b.matrix)]
+    p = softmax([0; π.α * v1])
+    sample(0:length(v1), Weights(p))  # assumption TERM = 0
+end
+
+const meta_greedy = Policy([0., 1, 0, 0, 0])
 
 choice_probs(b::Belief) = softmax(1e20 * b.weights' * mean.(b.matrix))[:]
 
@@ -316,22 +335,22 @@ function true_term_reward(p::Problem, b::Belief)
     choice_vals * choice_probs(b)
 end
 
+
 # this is the one matt has changed
 "Runs a Policy on a Problem."
-function rollout(π::Policy, p::Problem; initial_belief=nothing, max_steps=100, callback=((b, c) -> nothing))
+function rollout(π, p::Problem; initial_belief=nothing, max_steps=100, callback=((b, c) -> nothing))
     b = initial_belief == nothing ? Belief(p) : initial_belief
     total_cost = 0
-    computation_log = Int64[]
     for step in 1:max_steps
         c = (step == max_steps) ? TERM : π(b)
-        push!(computation_log,c)
         callback(b, c)
         if c == TERM
             reward = term_reward(b) - total_cost
-            choice = argmax(p.weights' * mean.(b.matrix))[2]
-            actual_ev = (p.weights' * p.matrix[:,choice]) - total_cost
-            return (user_expected_reward=reward, total_cost=total_cost, n_steps=step, choice=choice,
-                    assistant_expected_reward=actual_ev, computation_log=computation_log, belief=b)
+            cp = choice_probs(b)
+            cv = p.weights' * p.matrix
+            ev = cv * cp
+            return (total_cost=total_cost, n_steps=step, choice_probs=cp, choice_value=ev,
+                    belief=b)
         else
             total_cost += p.cost[c]
             observe!(b, p, c)
