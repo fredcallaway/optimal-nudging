@@ -26,6 +26,35 @@ function expected_reward(pol::Policy, prob::Problem)
     return value
 end
 
+@everywhere function choice_cost_steps(pol::Policy, prob::Problem)
+    total_p = 0.
+    n_clicks = 0.
+    cost = 0.
+    choice = zeros(prob.prm.n_gamble)
+
+    function recurse(b, p, n)
+        # print("\n>>> ", p, "  ")
+        # display(b)
+        v = voc(pol, b)
+        if all(v .<= 0) # terminate
+            n_clicks += p * n
+            choice .+= p .* choice_probs(b)
+            total_p += p
+        else
+            opt_c = findall(softmax(1e20 * v) .!= 0)
+            p /= length(opt_c)
+            for c in opt_c
+                cost += p * prob.cost[c]
+                recurse(observe(b, prob, c), p, n+1)
+            end
+        end
+    end
+
+    recurse(Belief(prob), 1, 0)
+    @assert total_p ≈ 1 "total_p = $total_p"
+    return choice, cost, n_clicks
+end
+
 expected_reward(prob::Problem) = expected_reward(meta_greedy, prob)
 
 function parallel_expected(f::Function, prob::Problem, pol, n)
@@ -44,6 +73,7 @@ function expected(f::Function, prob::Problem, pol, n=1000)
 end
 
 function expected_reward(pol, prob::Problem; n=1000)
+    @assert false
     expected(prob, pol, n) do roll
         roll.choice_value - roll.total_cost
     end

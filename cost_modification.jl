@@ -1,8 +1,6 @@
 include("mouselab.jl")
 include("metrics.jl")
 
-const meta_greedy = Policy([0,1,0,0,0])
-
 function modify_cost!(prob::Problem, select, f::Function)
     old = prob.cost[select]  # copys data (not a view)
     prob.cost[select] .= f.(prob.cost[select])
@@ -10,32 +8,32 @@ function modify_cost!(prob::Problem, select, f::Function)
     return undo!
 end
 
-function sale!(prob, select; budget::Float64=0.1)
+function sale!(prob, select, budget)
     sale_per_cell = budget / sum(select)
     modify_cost!(prob, select, cost -> max(0, cost - sale_per_cell))
 end
-function sale(prob, select; budget=0.1)
+function sale(prob, select, budget)
     prob = deepcopy(prob)
-    sale!(prob, select; budget=budget)
+    sale!(prob, select, budget)
     prob
 end
 
-function make_objective(prob::Problem, pol=meta_greedy; budget::Float64=0.1, n=nothing)
+function make_objective(prob::Problem, budget::Float64, pol=meta_greedy; n=nothing)
     return (select::BitVector) -> begin
         sale_per_cell = budget / sum(select)
-        undo! = sale!(prob, select; budget=budget)
+        undo! = sale!(prob, select, budget)
         er = n != nothing ? expected_reward(pol, prob, n=n) : expected_reward(pol, prob)
         undo!()
         return er
     end
 end
 
-function make_loss(prob::Problem; budget::Float64=0.1)
-    objective = make_objective(prob; budget=budget)
-    return (select::BitVector) -> begin
-        return -objective(select)
-    end
-end
+# function make_loss(prob::Problem, budget::Float64=0.1)
+#     objective = make_objective(prob, budget)
+#     return (select::BitVector) -> begin
+#         return -objective(select)
+#     end
+# end
 
 function advertise!(prob::Problem; factor::Float64=2.)
     for col in 1:size(prob.matrix, 2)
@@ -57,8 +55,10 @@ function best_cell_select(prob::Problem)
 end
 
 "Greedily searches for cells to put on sale"
-function greedy_select(prob::Problem; init=false)
-    objective = make_objective(prob; n=10000)
+function greedy_select(prob::Problem, budget::Float64, pol; init=false, max_sale=1000)
+    # use exact expected_reward for non-noisy policies
+    n = pol isa Policy ? nothing : 10000
+    objective = make_objective(prob, budget, pol; n=n)
     x = BitVector(fill(init, length(prob.cost)))
     best = objective(x)
     try_flip(i) = begin
@@ -67,7 +67,7 @@ function greedy_select(prob::Problem; init=false)
         x[i] = !x[i]
         return l
     end
-    while true
+    for _ in 1:max_sale
         obj, i = findmax(try_flip.(1:length(x)))
         if obj > best
             best = obj

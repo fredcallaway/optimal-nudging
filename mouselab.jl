@@ -329,12 +329,12 @@ end
 const meta_greedy = Policy([0., 1, 0, 0, 0])
 
 choice_probs(b::Belief) = softmax(1e20 * b.weights' * mean.(b.matrix))[:]
+choice_values(p::Problem) = p.weights' * p.matrix
 
 function true_term_reward(p::Problem, b::Belief)
     choice_vals = p.weights' * p.matrix
     choice_vals * choice_probs(b)
 end
-
 
 # this is the one matt has changed
 "Runs a Policy on a Problem."
@@ -348,7 +348,7 @@ function rollout(π, p::Problem; initial_belief=nothing, max_steps=100, callback
             reward = term_reward(b) - total_cost
             cp = choice_probs(b)
             cv = p.weights' * p.matrix
-            ev = cv * cp
+            ev = choice_values(p) * cp
             return (total_cost=total_cost, n_steps=step, choice_probs=cp, choice_value=ev,
                     belief=b)
         else
