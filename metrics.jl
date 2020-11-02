@@ -1,36 +1,37 @@
-include("mouselab.jl")
-using Distributed
-function expected_reward(pol::Policy, prob::Problem)
-    total_p = 0
-    value = 0
+# include("mouselab.jl")
+# using Distributed
+
+function expected_reward(pol::Policy, s::State)
+    total_p = 0.
+    value = 0.
 
     function recurse(b, p)
         # print("\n>>> ", p, "  ")
         # display(b)
         v = voc(pol, b)
         if all(v .<= 0) # terminate
-            value += p * true_term_reward(prob, b)
+            value += p * true_term_reward(s, b)
             total_p += p
         else
             opt_c = findall(softmax(1e20 * v) .!= 0)
             p /= length(opt_c)
             for c in opt_c
-                value -= p * prob.cost[c]
-                recurse(observe(b, prob, c), p)
+                value -= p * s.costs[c]
+                recurse(observe(b, s, c), p)
             end
         end
     end
 
-    recurse(Belief(prob), 1)
+    recurse(Belief(s), 1.)
     @assert total_p ≈ 1 "total_p = $total_p"
     return value
 end
 
-@everywhere function choice_cost_steps(pol::Policy, prob::Problem)
+@everywhere function choice_cost_steps(pol::Policy, s::State)
     total_p = 0.
     n_clicks = 0.
     cost = 0.
-    choice = zeros(prob.prm.n_gamble)
+    choice = zeros(s.prm.n_gamble)
 
     function recurse(b, p, n)
         # print("\n>>> ", p, "  ")
@@ -38,61 +39,61 @@ end
         v = voc(pol, b)
         if all(v .<= 0) # terminate
             n_clicks += p * n
-            choice .+= p .* choice_probs(b)
+            choice .+= p .* choice_ss(b)
             total_p += p
         else
             opt_c = findall(softmax(1e20 * v) .!= 0)
             p /= length(opt_c)
             for c in opt_c
-                cost += p * prob.cost[c]
-                recurse(observe(b, prob, c), p, n+1)
+                cost += p * s.cost[c]
+                recurse(observe(b, s, c), p, n+1)
             end
         end
     end
 
-    recurse(Belief(prob), 1, 0)
+    recurse(Belief(s), 1, 0)
     @assert total_p ≈ 1 "total_p = $total_p"
     return choice, cost, n_clicks
 end
 
-expected_reward(prob::Problem) = expected_reward(meta_greedy, prob)
+expected_reward(s::State) = expected_reward(meta_greedy, s)
 
-function parallel_expected(f::Function, prob::Problem, pol, n)
+function parallel_expected(f::Function, s::State, pol, n)
     total = @distributed (+) for i in 1:n
-        f(rollout(pol, prob))
+        f(rollout(pol, s))
     end
     total / n
 end
 
-function serial_expected(f::Function, prob::Problem, pol, n)
-    mean(f(rollout(pol, prob)) for i in 1:n)
+function serial_expected(f::Function, s::State, pol, n)
+    mean(f(rollout(pol, s)) for i in 1:n)
 end
 
-function expected(f::Function, prob::Problem, pol, n=1000)
-    (n > 1000 ? parallel_expected : serial_expected)(f, prob, pol, n)
+function expected(f::Function, s::State, pol, n=1000)
+    (n > 1000 ? parallel_expected : serial_expected)(f, s, pol, n)
 end
 
-function expected_reward(pol, prob::Problem; n=1000)
+function expected_reward(pol, s::State; n=1000)
     @assert false
-    expected(prob, pol, n) do roll
+    expected(s, pol, n) do roll
         roll.choice_value - roll.total_cost
     end
 end
 
 #
-# function choice_probs(pol, prob::Problem)
-#     @assert false "WARNING this is incorrect because it ignores probabilities (see above)"
-#     counts = zeros(prob.prm.n_gamble)
+# function choice_ss(pol, s::State)
+#     @assert false "WARNING this is incorrect because it ignores sabilities (see above)"
+#     counts = zeros(s.prm.n_gamble)
 #     function rec(b)  # FIXME this should take a p argument as well
 #         v = voc(pol, b)
 #         if all(v .<= 0) # terminate
-#             counts .+= choice_probs(b)
+#             counts .+= choice_ss(b)
 #         else
 #             for c in findall(softmax(1e20 * v) .!= 0)
-#                 rec(observe(b, prob, c))
+#                 rec(observe(b, s, c))
 #             end
 #         end
 #     end
-#     rec(Belief(prob))
+#     rec(Belief(s))
 #     return counts / sum(counts)
 # end

@@ -1,38 +1,45 @@
 using Distributed
-addprocs(4)
-@everywhere cd("/usr/people/flc2/juke/cost-modification")
-@everywhere include("cost_modification.jl")
+nprocs() == 1 && addprocs(4)
+# @everywhere cd("/usr/people/flc2/juke/cost-modification")
+# @everywhere include("cost_modification.jl")
 
 using JSON
-@everywhere prm = Params(n_gamble=6, n_outcome=3, cost=0.02,
-                         reward_dist=Normal(0.75, 0.37), weight_alpha=5)
 
+struct WeightDist end
+# rand(d::WeightDist) =
+
+@everywhere m = MetaMDP(6, 3, Normal(5, 1.5), Dirichlet(ones(3)), 0.1)
+# TODO 1.5 or 1.75
+# %% ====================  ====================
 @everywhere function generate_problem()
-    prob = nothing
+    s = nothing
     while true
-        prob = Problem(prm)
-        if any(prob.matrix .< 0)
+        s = State(m)
+        if any(s.matrix .< 0)
             continue  # inefficient, but it's fast so who cares?
         end
-        prob.matrix .= round.(prob.matrix; digits=2)
-        prob.weights .= round.(prob.weights; digits=2)
-        if sum(prob.weights) != 1
+        # TODO maybe use trials from pilot.
+
+        # s.weights .= round.(s.weights; digits=1) .* 10
+        # s.matrix ./= s.weights
+        # s.matrix .= round.(s.matrix)
+        # s.matrix .*= s.weights
+        if sum(s.weights) != 10
             continue
         end
-        prob.cost .+= rand(-prm.cost:.01:prm.cost, size(prob.cost))
+        s.costs .+= rand(-m.cost:.01:m.cost, size(s.costs))
         break
     end
-    return prob
+    return s
 end
 
-policy = meta_greedy
-max_sale = 3
-budget = prm.cost * max_sale
-
+generate_problem()
 # %% ====================  ====================
+max_sale = 3
+budget = m.cost * max_sale
 
-@everywhere function rand_select(prob, n_sale)
-    x = falses(length(prob.cost))
+@everywhere function rand_select(s, n_sale)
+    x = falses(length(s.costs))
     chosen = sample(1:length(x), n_sale; replace=false)
     x[chosen] .= true
     x
@@ -41,27 +48,28 @@ end
 @everywhere to_cents(x) = Int(round(x * 100; digits=5))
 
 function write_trials(n; scale=1)
-    trials = pmap(1:n) do i
-        prob = generate_problem()
-        select = greedy_select(prob, budget, policy, max_sale=max_sale)
-        # select = best_cell_select(prob)
+    trials = map(1:n) do i
+        s = generate_problem()
+        select = greedy_select(s, budget, max_sale=max_sale)
+        # select = best_cell_select(s)
         (
             problem_id=i,
-            payoffs=to_cents.(prob.matrix),
-            original_costs=to_cents.(prob.cost),
-            sale_costs=to_cents.(sale(prob, select, budget).cost),
-            random_costs=to_cents.(sale(prob, rand_select(prob, max_sale), budget).cost),
-            weights=to_cents.(prob.weights)
+            payoffs=to_cents.(s.matrix ./ s.weights),
+            original_costs=to_cents.(s.costs),
+            sale_costs=to_cents.(sale(s, select, budget).costs),
+            random_costs=to_cents.(sale(s, rand_select(s, max_sale), budget).costs),
+            weights=to_cents.(s.weights)
         )
     end
     open("trials.json", "w+") do f
         write(f, json(trials))
     end
+    trials
 end
 
 @time results = write_trials(21; scale=100)
-reults.payoffs
-results[1]
+# reults.payoffs
+# results[1]
 
 # %% ====================  ====================
 
@@ -69,60 +77,60 @@ results[1]
 
 # %% ====================  ====================
 r1, r2 = map(results) do r
-    prob.matrix .= r.payoffs
-    prob.cost .= r.original_costs
-    prob.weights .= r.weights
-    r1 = expected_reward(prob)
-    prob.cost .= r.sale_costs
-    r2 = expected_reward(prob)
+    s.matrix .= r.payoffs
+    s.costs .= r.original_costs
+    s.weights .= r.weights
+    r1 = expected_reward(s)
+    s.costs .= r.sale_costs
+    r2 = expected_reward(s)
     (r1, r2)
 end |> invert
 
-using HypothesisTests
-using RCall
-R"""
+# using HypothesisTests
+# using RCall
+# R"""
 
-""
+# ""
 
-# %% ====================  ====================
-display("---")
-prm = Params(n_gamble=6, n_outcome=3, cost=0.08,
-             reward_dist=Normal(3.00, 1.50), weight_alpha=5)
+# # %% ====================  ====================
+# display("---")
+# m = Params(n_gamble=6, n_outcome=3, cost=0.08,
+#              reward_dist=Normal(3.00, 1.50), weight_alpha=5)
 
-budget = prm.cost * 3
-prob = Problem(prm)
-prob.cost .+= rand(-prm.cost:.01:prm.cost, size(prob.cost))
-sort!(prob.weights; rev=true)
+# budget = m.cost * 3
+# s = State(m)
+# s.costs .+= rand(-m.cost:.01:m.cost, size(s.costs))
+# sort!(s.weights; rev=true)
 
-show_cost(prob)
-describe_rollout(policy, prob)
-# println(join(collect(0:3:15) .+ argmax(prob.weights), " "))
-# println(join(sortperm(prob.cost[:]), " "))
+# show_cost(s)
+# describe_rollout(policy, s)
+# # println(join(collect(0:3:15) .+ argmax(s.weights), " "))
+# # println(join(sortperm(s.costs[:]), " "))
 
-x = greedy_select(prob, budget, policy)
-describe_rollout(policy, sale(prob, x, budget))
-# show_cost(sale(prob, best_cell_select(prob), budget))
+# x = greedy_select(s, budget, policy)
+# describe_rollout(policy, sale(s, x, budget))
+# # show_cost(sale(s, best_cell_select(s), budget))
 
-# %% ====================  ====================
-# include("evolution.jl")
-prob = Problem(prm)
-prob.cost .+= rand(-prm.cost:.01:prm.cost, size(prob.cost))
+# # %% ====================  ====================
+# # include("evolution.jl")
+# s = State(m)
+# s.costs .+= rand(-m.cost:.01:m.cost, size(s.costs))
 
-objective = make_objective(prob, budget, policy)
-evolved = evolve_sale(prob, budget, policy; pop_size=400, verbosity=10, p_mutate=0.5)
-greedy = greedy_select(prob, budget, policy)
+# objective = make_objective(s, budget, policy)
+# evolved = evolve_sale(s, budget, policy; pop_size=400, verbosity=10, p_mutate=0.5)
+# greedy = greedy_select(s, budget, policy)
 
-println(objective(evolved[1]))
-println(objective(greedy))
-# %% ====================  ====================
-function JSON.lower(prob::Problem)
-    (payoffs=round.(prob.matrix; digits=2),
-     costs=prob.cost,
-     weights=round.(prob.weights; digits=2))
-end
+# println(objective(evolved[1]))
+# println(objective(greedy))
+# # %% ====================  ====================
+# function JSON.lower(s::State)
+#     (payoffs=round.(s.matrix; digits=2),
+#      costs=s.costs,
+#      weights=round.(s.weights; digits=2))
+# end
 
-problems = [Problem(prm), Problem(prm)]
-# isdir("trials") || mkdir("trials")
-open("trials.json", "w+") do f
-    write(f, json(problems))
-end
+# problems = [State(m), State(m)]
+# # isdir("trials") || mkdir("trials")
+# open("trials.json", "w+") do f
+#     write(f, json(problems))
+# end
