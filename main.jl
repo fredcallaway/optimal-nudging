@@ -31,3 +31,13 @@ map(M, X) do m, (with, without)
     (;m.n_gamble, m.n_outcome, m.cost, with, without)
 end  |> (x->x[:]) |> CSV.write("results/defaults/p_choose_default.csv")
 # %% --------
+
+include("suggest_alternative.jl")
+
+
+M = map(Iterators.product(2:2:6, .02:.02:.2, quality)) do (n_gamble, cost)
+    MetaMDP(n_gamble, n_outcome, Normal(5, 1.5), Dirichlet(ones(n_outcome)), cost)
+end |> collect;
+
+
+sample_suggestion_effect(mutate(m, cost=.1), 1)
