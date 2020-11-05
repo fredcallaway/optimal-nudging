@@ -34,6 +34,11 @@ macro ifundef(exp)
     isdefined(Main, e.args[1]) ? :($(e.args[1])) : :($(esc(exp)))
 end
 
+function mutate(x::T; kws...) where T
+    return T([get(kws, fn, getfield(x, fn)) for fn in fieldnames(T)]...)
+end
+
+
 
 # import Serialization: serialize
 # function serialize(s::String, x)

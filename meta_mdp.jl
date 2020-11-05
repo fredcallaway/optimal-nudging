@@ -186,7 +186,7 @@ function show_belief(b::Belief, c=0)
             if i == ci && j == cj
                 print("  XX  |")
             elseif d.σ > 1e-10
-                @printf " _%2d_ |" (j-1)*4 + i
+                @printf " _%2d_ |" (j-1)*n_row + i
             else
                 @printf " %5.2f |" d.μ
             end
