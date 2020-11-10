@@ -1,3 +1,4 @@
+using Distributed
 @everywhere include("default_options.jl")
 using ProgressMeter
 using SplitApplyCombine
@@ -45,8 +46,6 @@ end  |> (x->x[:]) |> CSV.write("results/defaults/p_choose_default.csv")
 suggest_effects = sample_many(sample_suggestion_effect, M, 5000);
 
 # %% --------
-
-# x = suggest_effects[1]
 
 X = summarize(suggest_effects) do x
     [x.with.choice[x.suggestion], x.without.choice[x.suggestion]]

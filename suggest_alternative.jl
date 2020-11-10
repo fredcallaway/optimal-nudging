@@ -1,15 +1,14 @@
-function apply_suggestion(b::Belief, s::State, alt::Int)
-    choice_probs(b)[alt] ≈ 1 && return b  # already chosen!
-    feature_σs = std.(b.matrix[:, alt])
-    σ, f = findmax(feature_σs)
-    σ == σ_OBS && return b  # nothing more to reveal
-    i = LinearIndices(b.matrix)[f, alt]
-    observe(b, s, i)
+function apply_suggestion(b::Belief, s::State, suggestion::Int)
+    choice_probs(b)[suggestion] ≈ 1 && return b  # already chosen!
+    feature = argmax(s.payoffs[:, suggestion])
+    cell = LinearIndices(b.matrix)[feature, suggestion]
+    observed(b, cell) && return b  # already observed
+    observe(b, s, cell)
 end
 
-function make_suggest(s, alt)
+function make_suggest(s, suggestion)
     function suggest(b)
-        apply_suggestion(b, s, alt)
+        apply_suggestion(b, s, suggestion)
     end
 end
 
