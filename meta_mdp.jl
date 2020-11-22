@@ -126,8 +126,9 @@ function rollout(π::Policy, s::State=State(π.m), b::Belief=Belief(s); max_step
         c = (step == max_steps) ? ⊥ : π(b)
         callback(b, c)
         if c == ⊥
+            cost = -reward
             reward += term_reward(b)
-            return (reward=reward, steps=step, state=s, belief=b)
+            return (reward=reward, cost=cost, steps=step, state=s, belief=b)
         else
             reward -= s.costs[c]
             observe!(b, s, c)
@@ -151,12 +152,11 @@ function Base.show(io::IO, x::Dirichlet)
 end
 
 function Base.show(io::IO, m::MetaMDP)
-    io = stdout
     print(io, typeof(m), "(\n")
     for fn in fieldnames(typeof(m))
-        println("  $fn = ", getfield(m, fn), ",")
+        println(io, "  $fn = ", getfield(m, fn), ",")
     end
-    print(")")
+    print(io, ")")
 end
 
 
