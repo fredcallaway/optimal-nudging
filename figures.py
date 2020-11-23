@@ -38,10 +38,11 @@ class Watcher(object):
 from datetime import datetime
 class Figures(object):
     """Plots and saves figures."""
-    def __init__(self, path='figs', hist_path='fighist', dpi=200):
+    def __init__(self, path='figs', hist_path='fighist', dpi=200, pdf=False):
         self.path = path
         self.hist_path = hist_path
         self.dpi = dpi
+        self.pdf = pdf
         self.names = {}
         self._last = None
         self.nosave = False
@@ -91,7 +92,9 @@ class Figures(object):
             self.watcher.start()
         self.watcher = Watcher(self.hist_path)
 
-    def show(self, name='tmp', pdf=False, tight=True, reformat_labels=False, reformat_legend=False, despine=True):
+    def show(self, name='tmp', pdf=None, tight=True, reformat_labels=False, reformat_legend=False, despine=True):
+        if pdf is None:
+            pdf = self.pdf
         try:
             if tight:
                 plt.tight_layout()
@@ -119,7 +122,7 @@ class Figures(object):
         finally:
             plt.close('all')
 
-    def figure(self, save=True, reformat_labels=False, reformat_legend=False, despine=True, **kwargs):
+    def figure(self, save=True, pdf=None, reformat_labels=False, reformat_legend=False, despine=True, **kwargs):
         """Decorator that calls a plotting function and saves the result."""
         def decorator(func):
             params = [v for v in kwargs.values() if v is not None]
@@ -130,7 +133,7 @@ class Figures(object):
             try:
                 plt.figure()
                 func(**kwargs)
-                self.show(name, reformat_labels=reformat_labels, reformat_legend=reformat_legend, despine=despine)
+                self.show(name, pdf=pdf, reformat_labels=reformat_labels, reformat_legend=reformat_legend, despine=despine)
             finally:
                 plt.close('all')
             return func

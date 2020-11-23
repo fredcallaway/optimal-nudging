@@ -1,8 +1,3 @@
-include("utils.jl")
-include("meta_mdp.jl")
-include("directed_cognition.jl")
-include("meta_greedy.jl")
-include("nudging_base.jl")
 
 function estimate_default_beliefs(m; N=1000000)
     default_vals = Float64[]; other_vals = Float64[]
@@ -38,6 +33,9 @@ function sample_default_effect(m::MetaMDP, polclass=DCPolicy)
     b = Belief(s)
     default = argmax(sum(s.payoffs; dims=1)).I[2]
     nudged_b = apply_default!(Belief(s), default)
-    (default, weight_var = var(s.weights), weight_dev = sum(abs.(s.weights .- mean(s.weights))),
-     with = simulate(pol, s, nudged_b), without = simulate(pol, s, b))
+    (default, 
+     weight_var = var(s.weights), 
+     weight_dev = sum(abs.(s.weights .- mean(s.weights))),
+     with = simulate(pol, s, nudged_b),
+     without = simulate(pol, s, b))
 end

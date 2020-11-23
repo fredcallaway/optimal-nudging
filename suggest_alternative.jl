@@ -1,6 +1,10 @@
+SUGGEST_VERSION = :best_feature
+
 function apply_suggestion!(b::Belief, s::State, suggestion::Int)
-    # choice_probs(b)[suggestion] ≈ 1 && return b  # already chosen!
-    feature = argmax(s.payoffs[:, suggestion])
+    feature = 
+        SUGGEST_VERSION == :best_feature ? argmax(s.payoffs[:, suggestion]) :
+        SUGGEST_VERSION == :max_weight ? argmax(std.(b.matrix[:, suggestion])) :
+        error("bad SUGGEST_VERSION")
     cell = LinearIndices(b.matrix)[feature, suggestion]
     observed(b, cell) && return b  # already observed
     observe!(b, s, cell)
@@ -25,8 +29,16 @@ function sample_suggestion_effect(m, polclass=DCPolicy)
     pol = polclass(m)
     s = experiment_state(m)
     b = Belief(s)
+    cv = choice_values(s)
     suggestion = rand(1:m.n_gamble)
+    other_vals = [cv[g] for g in 1:m.n_gamble if g != suggestion]
     feature = argmax(s.payoffs[:, suggestion])
-    (suggestion, with = simulate_suggestion(pol, s, suggestion), without = simulate(pol, s, Belief(s)),
-     other_vals = mean(s.payoffs[i, suggestion] for i in 1:m.n_outcome if i != feature))
+    (suggestion,
+     with = simulate_suggestion(pol, s, suggestion),
+     without = simulate(pol, s, Belief(s)),
+     weight_dev = sum(abs.(s.weights .- mean(s.weights))),
+     mean_other = mean(other_vals),
+     max_other = maximum(other_vals),
+     total_val = mean(s.payoffs[:, suggestion]),
+     nonbest_val = mean(s.payoffs[o, suggestion] for o in 1:m.n_outcome if o != feature))
 end

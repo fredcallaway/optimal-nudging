@@ -1,3 +1,8 @@
+include("utils.jl")
+include("meta_mdp.jl")
+include("directed_cognition.jl")
+include("meta_greedy.jl")
+
 using StatsBase
 
 function evaluate(pol::Policy, s::State, b=Belief(s), post_decision=nothing)
@@ -66,7 +71,7 @@ end
 function experiment_state(m::MetaMDP)
     # @assert m.reward_dist == Normal(5, 1.75)
     w = rand(m.weight_dist)
-    payoffs = max.(0, min.(10, round.(Int, rand(m.reward_dist, (m.n_outcome, m.n_gamble)))))
+    payoffs = max.(0, min.(10, round.(rand(m.reward_dist, (m.n_outcome, m.n_gamble)))))
     costs = m.cost * ones(m.n_outcome, m.n_gamble)
     State(m, w, payoffs, costs, w .* payoffs)
 end
