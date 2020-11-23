@@ -19,11 +19,15 @@ show = figs.show; figure = figs.figure
 GRAY = (0.7, 0.7, 0.7)
 PAL = {0: GRAY, 1: 'C0'}
 
+def load_sim(name):
+    df = pd.read_csv(f'../model/results/{name}.csv')
+    df['meta_return'] = df.payoff - df.decision_cost
+    df.reveal_cost = df.reveal_cost.astype(int)
+
+    return df
 
 # %% ==================== Prob choose default ====================
-df = pd.read_csv('results/default_sims.csv')
-df['meta_return'] = df.payoff - df.decision_cost
-df.reveal_cost = df.reveal_cost.astype(int)
+df = load_sim('default_sims')
 
 g = sns.catplot('reveal_cost', 'choose_default', 
     row='n_option', col='n_feature', hue='nudge', data=df, 
@@ -34,9 +38,6 @@ g.set_xlabels('Reveal Cost')
 g.set(ylim=(0, 1.05), yticks=(0, 1))
 g.set_ylabels('Prob Choose Default')
 show('choose_default', pdf=True)
-
-# %% --------
-df.decision_cost
 # df.groupby(['reveal_cost', 'n_option', 'n_feature', 'nudge']).decision_cost.mean()
 
 # %% ==================== Default benefits  ====================
@@ -66,7 +67,7 @@ show('default_utility', pdf=True)
 
 # %% ==================== Choose suggestion ====================
 
-df = pd.read_csv('results/suggest_sims.csv')
+df = load_sim('suggest_sims')
 df['meta_return'] = df.payoff - df.decision_cost
 
 g = sns.catplot('reveal_cost', 'choose_suggested', 
@@ -79,7 +80,7 @@ show('choose_suggested')
 
 # %% ====================  ====================
 
-df = pd.read_csv('results/suggest_sims.csv')
+df = load_sim('suggest_sims')
 df['meta_return'] = df.payoff - df.decision_cost
 df['rv_mean'] = df.total_val - df.mean_other
 df['rv_max'] = df.total_val - df.max_other
@@ -113,13 +114,10 @@ data['x'] = pd.cut(data.other_val, 10).apply(lambda x: x.mid)
 sns.pointplot('x', 'choose_suggested', data=data, hue='nudge')
 show()
 
-
-
-
-
 # %% ==================== Suggest New ====================
 
-df = pd.read_csv('results/suggest_new_sims.csv')
+df = load_sim('suggest_new_sims')
+
 df['meta_return'] = df.payoff - df.decision_cost
 
 g = sns.catplot('reveal_cost', 'choose_suggested', 
