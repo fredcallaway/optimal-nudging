@@ -37,3 +37,23 @@ g.set_xticklabels([1,2,3,4])
 g.set_xlabels('Weight Deviation Quartile')
 # g.set(ylim=(150, 250), yticks=[150, 250], yticklabels=(150, 250))
 show('default_utility', pdf=True)
+
+
+
+# %% ==================== Weight D  ====================
+
+g = sns.FacetGrid(df, 'n_option', 'n_feature', margin_titles=False, height=4)
+
+def plot_one(data, **kwargs):
+    data['x'] = pd.qcut(data.weight_dev, 4).apply(lambda x: x.mid)
+    for nudge, d in data.groupby('nudge'):
+        c = PAL[nudge]
+        g = d.groupby('x')
+        g.choose_default.mean().plot(color=c)
+
+g.map_dataframe(plot_one)
+g.set_titles(template='{row_name} Options – {col_name} Features')
+
+g.set_xticklabels([1,2,3,4])
+g.set_xlabels('Weight Deviation Quartile')
+show()

@@ -5,9 +5,6 @@ show()
 
 # %% ==================== Suggest new deviation ====================
 
-df = pd.read_csv('results/suggest_new_sims.csv')
-df['meta_return'] = df.payoff - df.decision_cost
-
 g = sns.FacetGrid(df, 'n_option', 'n_feature', margin_titles=False, height=4)
 
 def plot_one(data, **kwargs):
