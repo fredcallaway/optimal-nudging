@@ -1,7 +1,24 @@
 df = load_sim('suggest_new_sims')
 
-catplot(df, 'reveal_cost', 'choose_suggested')
-show()
+# %% ==================== Summary stats ====================
+
+choose = df.groupby(['after', 'reveal_cost', 'n_option', 'n_feature']).choose_suggested.mean()
+choose_gain = choose[0] - choose[1]
+
+# %% ==================== Suggest early ====================
+
+
+pal = {0: 'C2', 1: '#AED1B2'}
+g = catplot(df, 'reveal_cost', 'choose_suggested', hue='after',
+        palette=pal)
+g.set(ylim=(0, 1.05), yticks=(0, 1))
+
+g.axes[1,0].annotate('early suggestion', (.05, 0.27), xycoords='axes fraction', 
+    color=pal[0], horizontalalignment='left', fontweight='bold')
+g.axes[1,0].annotate('late suggestion', (.05, 0.08), xycoords='axes fraction', 
+    color=pal[1], horizontalalignment='left', fontweight='bold')
+
+show('suggest_early')
 
 # %% ==================== Suggest new deviation ====================
 
