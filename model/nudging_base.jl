@@ -59,19 +59,16 @@ function Base.rand(d::ExperimentWeights)
     diff(x) .+ 1
 end
 
-# %% --------
-# @memoize function possible_weights(N; total=30)
-#     filter(collect.(Iterators.product(fill(1:1:total, N)...))) do x
-#         sum(x) ≈ total
-#     end
-# end
+function round_payoffs!(payoffs::Array)
+    payoffs .= max.(0, min.(10, round.(payoffs)))
+end
+function round_payoffs!(s::State)
+    round_payoffs!(s.payoffs)
+    s.weighted_payoffs .= s.weights .* s.payoffs
+    s
+end
 
-
-# %% --------
 function experiment_state(m::MetaMDP)
     # @assert m.reward_dist == Normal(5, 1.75)
-    w = rand(m.weight_dist)
-    payoffs = max.(0, min.(10, round.(rand(m.reward_dist, (m.n_outcome, m.n_gamble)))))
-    costs = m.cost * ones(m.n_outcome, m.n_gamble)
-    State(m, w, payoffs, costs, w .* payoffs)
+    round_payoffs!(State(m))
 end

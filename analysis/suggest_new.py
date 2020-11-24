@@ -1,4 +1,34 @@
-df = load_sim('suggest_new_sims')
+def load_data(name):
+    df = pd.read_csv(f'../data/{name}.csv')
+    df.rename(columns={
+        'cost': 'reveal_cost', 
+        'chose_nudge': 'choose_suggested',
+        'og_baskets': 'n_option',
+        'num_features': 'n_feature',
+        'weights_deviation': 'weight_dev'
+
+    }, inplace=True)
+    df = df.query('trial_nudge != "control"').copy()
+    df['after'] = (df.trial_nudge == 'post-supersize').astype(int)
+    return df
+
+data = {
+    'model': load_sim('suggest_new_sims'),
+    'human': load_data('pilot5_supersize')
+}
+
+# %% --------
+
+pal = {0: 'C2', 1: '#AED1B2'}
+g = catplot(df, 'reveal_cost', 'choose_suggested', hue='after', palette=pal)
+g.set(ylim=(0, 1.05), yticks=(0, 1))
+
+# g.axes[1,0].annotate('early suggestion', (.05, 0.27), xycoords='axes fraction', 
+#     color=pal[0], horizontalalignment='left', fontweight='bold')
+# g.axes[1,0].annotate('late suggestion', (.05, 0.08), xycoords='axes fraction', 
+#     color=pal[1], horizontalalignment='left', fontweight='bold')
+
+show('suggest_early_human')
 
 # %% ==================== Summary stats ====================
 
@@ -7,33 +37,44 @@ choose_gain = choose[0] - choose[1]
 
 # %% ==================== Suggest early ====================
 
+def suggest_early(df, agent):
+    pal = {0: 'C2', 1: '#AED1B2'}
+    g = catplot(df, 'reveal_cost', 'choose_suggested', hue='after',
+            palette=pal)
+    g.set(ylim=(0, 1.05), yticks=(0, 1))
 
-pal = {0: 'C2', 1: '#AED1B2'}
-g = catplot(df, 'reveal_cost', 'choose_suggested', hue='after',
-        palette=pal)
-g.set(ylim=(0, 1.05), yticks=(0, 1))
+    if agent == 'model':
+        g.axes[1,0].annotate('early suggestion', (.05, 0.27), xycoords='axes fraction', 
+            color=pal[0], horizontalalignment='left', fontweight='bold')
+        g.axes[1,0].annotate('late suggestion', (.05, 0.08), xycoords='axes fraction', 
+            color=pal[1], horizontalalignment='left', fontweight='bold')
 
-g.axes[1,0].annotate('early suggestion', (.05, 0.27), xycoords='axes fraction', 
-    color=pal[0], horizontalalignment='left', fontweight='bold')
-g.axes[1,0].annotate('late suggestion', (.05, 0.08), xycoords='axes fraction', 
-    color=pal[1], horizontalalignment='left', fontweight='bold')
 
-show('suggest_early')
+plot_both(suggest_early, data)
 
 # %% ==================== Suggest new deviation ====================
+import json
+def mad(x):
+    return np.mean(np.abs(x - np.mean(x)))
 
-g = sns.FacetGrid(df, 'n_option', 'n_feature', margin_titles=False, height=4)
+df.weights = df.weights.apply(json.loads)
+df.weight_dev = df.weights.apply(mad)
+# %% --------
 
-def plot_one(data, **kwargs):
-    data['x'] = pd.qcut(data.weight_dev, 4).apply(lambda x: x.mid)
-    data.groupby('x').choose_suggested.mean().plot()
+def suggest_deviation(df, agent):
+    g = sns.FacetGrid(df, 'n_option', 'n_feature', margin_titles=False, height=4)
 
-g.map_dataframe(plot_one)
-g.set_titles(template='{row_name} Options – {col_name} Features')
-g.set_xticklabels([1,2,3,4])
-g.set_xlabels('Weight Deviation Quartile')
-g.set_ylabels('Prob Choose Suggested')
-show()
+    def plot_one(data, **kwargs):
+        data['x'] = pd.qcut(data.weight_dev, 4).apply(lambda x: x.mid)
+        data.groupby('x').choose_suggested.mean().plot()
+
+    g.map_dataframe(plot_one)
+    g.set_titles(template='{row_name} Options – {col_name} Features')
+    g.set_xticklabels([1,2,3,4])
+    g.set_xlabels('Weight Deviation Quartile')
+    g.set_ylabels('Prob Choose Suggested')
+
+plot_both(suggest_deviation, data)
 
 # %% ==================== Payoff ====================
 

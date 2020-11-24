@@ -39,14 +39,17 @@ let  # pre-compute default beliefs
 end
 
 # %% --------
+mdp_features(m) = (
+    n_option = m.n_gamble,
+    n_feature = m.n_outcome,
+    reveal_cost = m.cost
+)
 
 default_effects = sample_many(sample_default_effect, M, 10000, DCPolicy);
 data = mapmany(M, default_effects) do m, de
     mapmany(de) do d
         map(0:1, [d.without, d.with]) do nudge, x
-            (n_option = m.n_gamble,
-             n_feature = m.n_outcome,
-             reveal_cost = m.cost,
+            (;mdp_features(m)...
              nudge,
              d.weight_var,
              d.weight_dev,
@@ -62,6 +65,28 @@ let
     Tdata::Vector{T} = data
     DataFrame(Tdata) |> CSV.write("results/default_sims.csv")
 end
+
+
+# %% ==================== Suggest new ====================
+
+@everywhere include("suggest_new.jl")
+d = sample_suggest_new_effect(M[end])
+new_effects = sample_many(sample_suggest_new_effect, M, 5000, DCPolicy);
+
+mapmany(M, new_effects) do m, de
+    mapmany(de) do d
+        map(0:1, [d.before, d.after]) do after, x
+            (;
+                mdp_features(m)...,
+                d.features...,
+                after,
+                x.payoff,
+                decision_cost = x.cost,
+                choose_suggested = Int(x.choice == d.suggestion)
+            )
+        end
+    end
+end |> DataFrame |> CSV.write("results/suggest_new_sims.csv")
 
 
 # %% ==================== Suggest alternative ====================
@@ -90,26 +115,6 @@ mapmany(M, suggest_effects) do m, de
         end
     end
 end |> DataFrame |> CSV.write("results/suggest_sims.csv")
-
-
-
-
-# %% ==================== Suggest new ====================
-
-@everywhere include("suggest_new.jl")
-sample_suggest_new_effect(M[end])
-new_effects = sample_many(sample_suggest_new_effect, M, 5000, DCPolicy);
-
-mapmany(M, new_effects) do m, de
-    map(de) do d
-        (n_option = m.n_gamble,
-         n_feature = m.n_outcome,
-         reveal_cost = m.cost,
-         d...)
-    end
-end |> DataFrame |> CSV.write("results/suggest_new_sims.csv")
-
-
 
 
 

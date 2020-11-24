@@ -1,4 +1,7 @@
-df = load_sim('default_sims')
+data = {
+    'model': load_sim('default_sims'),
+    'human': load_sim('default_sims')
+}
 
 # %% ==================== Summary stats ====================
 
@@ -15,59 +18,55 @@ df.groupby(['nudge', 'reveal_cost', 'n_option', 'n_feature']).nocost.mean()[1]
 
 # %% ==================== Prob choose default ====================
 
-def choose_f
-g = sns.catplot('reveal_cost', 'choose_default', 
-    row='n_option', col='n_feature', hue='nudge', data=df, 
-    legend=False, palette=PAL, ci=None, kind='point', height=4)
+def choose_default(df):
+    g = catplot(df, 'reveal_cost', 'choose_default', hue='nudge', palette=PAL)
+    g.set_titles(template='{row_name} Options – {col_name} Features')
+    g.set_xlabels('Reveal Cost')
+    g.set(ylim=(0, 1.05), yticks=(0, 1))
+    g.set_ylabels('Prob Choose Default')
 
-g.set_titles(template='{row_name} Options – {col_name} Features')
-g.set_xlabels('Reveal Cost')
-g.set(ylim=(0, 1.05), yticks=(0, 1))
-g.set_ylabels('Prob Choose Default')
+    g.axes[1,0].annotate('with default', (.05, 0.9), xycoords='axes fraction', 
+        color=PAL[1], horizontalalignment='left', fontweight='bold')
+    g.axes[1,0].annotate('without default', (.05, 0.48), xycoords='axes fraction', 
+        color=PAL[0], horizontalalignment='left', fontweight='bold')
+    return g
 
-g.axes[1,0].annotate('with default', (.05, 0.9), xycoords='axes fraction', 
-    color=PAL[1], horizontalalignment='left', fontweight='bold')
-g.axes[1,0].annotate('without default', (.05, 0.48), xycoords='axes fraction', 
-    color=PAL[0], horizontalalignment='left', fontweight='bold')
-
-show('choose_default', pdf=True)
-# df.groupby(['reveal_cost', 'n_option', 'n_feature', 'nudge']).decision_cost.mean()
+plot_both(choose_default, data)
 
 # %% ==================== Default benefits  ====================
 
-g = sns.FacetGrid(df, 'n_option', 'n_feature', margin_titles=False, height=4)
+def default_utility(df):
+    g = sns.FacetGrid(df, 'n_option', 'n_feature', margin_titles=False, height=4)
 
-def plot_one(data, **kwargs):
-    n = 4
-    data['wvb'] = pd.cut(data.weight_dev, n)
-    for nudge, d in data.groupby('nudge'):
-        c = PAL[nudge]
-        g = d.groupby('wvb')
-        payoff = g.payoff.mean()
-        meta = g.meta_return.mean()
-        payoff.plot(color=c)
-        plt.fill_between(range(0,n), meta, payoff, alpha=0.1, color=c)
-        meta.plot(color=c, lw=3)
-    # plt.yticks([], [])
-    
+    def plot_one(data, **kwargs):
+        n = 4
+        data['wvb'] = pd.cut(data.weight_dev, n)
+        for nudge, d in data.groupby('nudge'):
+            c = PAL[nudge]
+            g = d.groupby('wvb')
+            payoff = g.payoff.mean()
+            meta = g.meta_return.mean()
+            payoff.plot(color=c)
+            plt.fill_between(range(0,n), meta, payoff, alpha=0.1, color=c)
+            meta.plot(color=c, lw=3)
+        # plt.yticks([], [])
 
-g.map_dataframe(plot_one)
-g.set_titles(template='{row_name} Options – {col_name} Features')
-g.set_ylabels('Utility')
-g.set_xticklabels([1,2,3,4])
-g.set_xlabels('Weight Deviation Quartile')
+    g.map_dataframe(plot_one)
+    g.set_titles(template='{row_name} Options – {col_name} Features')
+    g.set_ylabels('Utility')
+    g.set_xticklabels([1,2,3,4])
+    g.set_xlabels('Weight Deviation Quartile')
 
-g.axes[1,0].annotate('action utility', (.84, 0.83), xycoords='axes fraction', 
-    color=PAL[0], horizontalalignment='right', rotation=17)
+    g.axes[1,0].annotate('action utility', (.84, 0.83), xycoords='axes fraction', 
+        color=PAL[0], horizontalalignment='right', rotation=17)
 
-g.axes[1,0].annotate('total utility', (.4, 0.4), xycoords='axes fraction', 
-    color=PAL[0], horizontalalignment='right', fontweight='bold', rotation=13)
+    g.axes[1,0].annotate('total utility', (.4, 0.4), xycoords='axes fraction', 
+        color=PAL[0], horizontalalignment='right', fontweight='bold', rotation=13)
 
-g.axes[1,0].annotate('deliberation cost', (.55, 0.55), xycoords='axes fraction', 
-    color=PAL[0], horizontalalignment='right', rotation=13, alpha=0.65)
+    g.axes[1,0].annotate('deliberation cost', (.55, 0.55), xycoords='axes fraction', 
+        color=PAL[0], horizontalalignment='right', rotation=13, alpha=0.65)
 
-show('default_utility', pdf=True)
-
+plot_both(default_utility, data)
 
 
 # %% ==================== Weight D  ====================

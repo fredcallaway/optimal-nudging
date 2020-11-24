@@ -42,3 +42,9 @@ def catplot(data, x, y, **kws):
     if y in names:
         g.set_ylabels(names[y])
     return g
+
+def plot_both(func, data):
+    for k, v in data.items():
+        func(v, k)
+        plt.suptitle(k.title(), y=1.03, fontsize=24)
+        show(f'{func.__name__}_{k}', pdf=True)
