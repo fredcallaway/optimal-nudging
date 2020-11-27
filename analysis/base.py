@@ -19,11 +19,15 @@ show = figs.show; figure = figs.figure
 GRAY = (0.7, 0.7, 0.7)
 PAL = {0: GRAY, 1: 'C0'}
 
-def load_sim(name):
+def load_sim(name, cost=None):
     df = pd.read_csv(f'../model/results/{name}.csv')
     df['meta_return'] = df.payoff - df.decision_cost
     df.reveal_cost = df.reveal_cost.astype(int)
-    return df
+    df['choose_immediately'] = df.decision_cost == 0
+    if cost is not None:
+        return df.query(f'reveal_cost == {cost}')
+    else:
+        return df
 
 names = {
     'choose_default': 'Prob Choose Default',
@@ -33,9 +37,10 @@ names = {
 }
 
 def catplot(data, x, y, **kws):
-    g = sns.catplot(x, y, 
-        row='n_option', col='n_feature', data=data, 
-        legend=False, kind='point', height=4, **kws)
+    kwargs = dict(row='n_option', col='n_feature', data=data, 
+                  legend=False, kind='bar', height=4,)
+    kwargs.update(kws)
+    g = sns.catplot(x, y, **kwargs)
     g.set_titles(template='{row_name} Options – {col_name} Features')
     if x in names:
         g.set_xlabels(names[x])

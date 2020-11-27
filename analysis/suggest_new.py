@@ -40,7 +40,7 @@ choose_gain = choose[0] - choose[1]
 def suggest_early(df, agent):
     pal = {0: 'C2', 1: '#AED1B2'}
     g = catplot(df, 'reveal_cost', 'choose_suggested', hue='after',
-            palette=pal)
+            palette=pal, kind='point')
     g.set(ylim=(0, 1.05), yticks=(0, 1))
 
     if agent == 'model':
@@ -50,7 +50,9 @@ def suggest_early(df, agent):
             color=pal[1], horizontalalignment='left', fontweight='bold')
 
 
-plot_both(suggest_early, data)
+# plot_both(suggest_early, data)
+suggest_early(data['model'], 'model')
+show()
 
 # %% ==================== Suggest new deviation ====================
 import json
