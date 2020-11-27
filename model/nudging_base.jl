@@ -41,9 +41,12 @@ function evaluate(pol::Policy, s::State, b=Belief(s), post_decision=nothing)
 end
 
 function simulate(pol, s, b)
-    x = rollout(pol, s, b)
+    clicks = Int[]
+    x = rollout(pol, s, b) do b, c
+        c != 0 && push!(clicks, c)
+    end
     choice = sample(Weights(choice_probs(b)))
-    (choice, payoff=choice_values(s)[choice], x.cost)
+    (choice, payoff=choice_values(s)[choice], x.cost, clicks)
 end
 
 # %% --------

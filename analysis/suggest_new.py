@@ -17,23 +17,13 @@ data = {
     'human': load_data('pilot5_supersize')
 }
 
-# %% --------
+# %% ==================== After x Naive ====================
+df = data['model'].query('n_feature == 5 and n_option == 5')
 
-pal = {0: 'C2', 1: '#AED1B2'}
-g = catplot(df, 'reveal_cost', 'choose_suggested', hue='after', palette=pal)
-g.set(ylim=(0, 1.05), yticks=(0, 1))
-
-# g.axes[1,0].annotate('early suggestion', (.05, 0.27), xycoords='axes fraction', 
-#     color=pal[0], horizontalalignment='left', fontweight='bold')
-# g.axes[1,0].annotate('late suggestion', (.05, 0.08), xycoords='axes fraction', 
-#     color=pal[1], horizontalalignment='left', fontweight='bold')
-
-show('suggest_early_human')
-
-# %% ==================== Summary stats ====================
-
-choose = df.groupby(['after', 'reveal_cost', 'n_option', 'n_feature']).choose_suggested.mean()
-choose_gain = choose[0] - choose[1]
+sns.catplot('reveal_cost', 'choose_suggested', data=df, 
+    hue='after', col='naive',
+    kind='point')
+show()
 
 # %% ==================== Suggest early ====================
 
@@ -51,7 +41,8 @@ def suggest_early(df, agent):
 
 
 # plot_both(suggest_early, data)
-suggest_early(data['model'], 'model')
+df = data['model'].query('naive == 1')
+suggest_early(df, 'model')
 show()
 
 # %% ==================== Suggest new deviation ====================

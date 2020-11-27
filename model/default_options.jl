@@ -27,15 +27,26 @@ function apply_default!(b::Belief, default::Int; use_cache=true)
     b
 end
 
+function simulate_default(pol, s, b, default)
+    choice, payoff, cost, clicks = simulate(pol, s, b)
+    default_clicks = LinearIndices(b.matrix)[:, default]
+    (
+        n_click_default = isempty(clicks) ? 0 : sum(c in default_clicks for c in clicks),
+        decision_cost = cost,
+        payoff,
+        choose_default = Int(choice == default),
+    )
+end
+
 function sample_default_effect(m::MetaMDP, polclass=DCPolicy)
     pol = polclass(m)
     s = experiment_state(m)
     b = Belief(s)
     default = argmax(sum(s.payoffs; dims=1)).I[2]
     nudged_b = apply_default!(Belief(s), default)
-    (default, 
-     weight_var = var(s.weights), 
+
+    (default,
      weight_dev = sum(abs.(s.weights .- mean(s.weights))),
-     with = simulate(pol, s, nudged_b),
-     without = simulate(pol, s, b))
+     with = simulate_default(pol, s, nudged_b, default),
+     without = simulate_default(pol, s, b, default))
 end
