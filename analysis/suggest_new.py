@@ -14,16 +14,55 @@ def load_data(name):
 
 data = {
     'model': load_sim('suggest_new_sims'),
-    'human': load_data('pilot5_supersize')
+    # 'human': load_data('pilot5_supersize')
 }
 
 # %% ==================== After x Naive ====================
 df = data['model'].query('n_feature == 5 and n_option == 5')
 
-sns.catplot('reveal_cost', 'choose_suggested', data=df, 
-    hue='after', col='naive',
-    kind='point')
+g = sns.catplot('reveal_cost', 'choose_suggested', data=df, 
+    hue='after', col='naive', palette={0: 'C2', 1: '#AED1B2'},
+    kind='point', legend=False)
+ax = g.axes.flat[0]
+handles, labels = ax.get_legend_handles_labels()
+new_labels = ['Early', 'Late']
+ax.legend(handles=handles, labels=new_labels)
+for ax, t in zip(g.axes.flat, ['Savvy', 'Naïve']):
+    ax.set_title(t)
+
+g.set_xlabels('Reveal Cost')
+g.set_ylabels('Prob Choose Suggested')
+
 show()
+
+# %% --------
+
+g = sns.catplot('reveal_cost', 'choose_suggested',
+    data=data['model'].query('n_option == 5 and n_feature==5'),
+    hue='after', col='naive',
+    palette={0: 'C2', 1: '#AED1B2'},
+    kind='point', legend=False)
+show()
+
+# %% --------
+g = catplot(data['model'].query('reveal_cost == 4'),
+   'naive', 'choose_suggested', 
+    hue='after', palette={0: 'C2', 1: '#AED1B2'},
+    kind='point', legend=False)
+
+
+ax = g.axes.flat[0]
+handles, labels = ax.get_legend_handles_labels()
+new_labels = ['Early', 'Late']
+ax.legend(handles=handles, labels=new_labels)
+plot_chance(g, [1/3, 1/6])
+g.set(ylim=(0, 1.05), yticks=(0, 1))
+g.set_xlabels("")
+g.set_xticklabels(['Savvy', 'Naïve'])
+
+
+show()
+
 
 # %% ==================== Suggest early ====================
 

@@ -48,6 +48,12 @@ def catplot(data, x, y, **kws):
         g.set_ylabels(names[y])
     return g
 
+def plot_chance(g, chance):
+    for axes, p in zip(g.axes, chance):
+        for ax in axes:
+            ax.axhline(p, ls=':', color='k')#.set_zorder(0)
+
+
 def plot_both(func, data):
     for k, v in data.items():
         func(v, k)

@@ -23,6 +23,7 @@ function add_new_option(s::State, b::Belief, naive::Bool)
 
     # New belief
     best_feature_val, best_feature = findmax(new_payoffs)
+
     new_beliefs = map(eachindex(s.weights), s.weights, new_payoffs) do o, w, payoff
         if o == best_feature
             Normal(w * payoff, σ_OBS)
@@ -39,7 +40,6 @@ function add_new_option(s::State, b::Belief, naive::Bool)
 
     s1, b1
 end
-
 
 function simulate_suggest_after(pol::Policy, s::State, b::Belief, naive::Bool)
     # first decision
@@ -65,8 +65,7 @@ end
 function sample_suggest_new_effect(m, polclass=DCPolicy)
     pol = polclass(m)
     s = experiment_state(m)
-    b = Belief(s)
 
-    [simulate_suggest(pol, s, b, naive, after) 
+    [simulate_suggest(pol, s, Belief(s), naive, after) 
        for naive in [false, true] for after in [false, true]]
 end
