@@ -23,8 +23,7 @@ end
 emax(x::Float64, c::Float64) = max(x, c)
 
 "Value of knowing the value in a cell."
-function voi1(b::Belief, cell::Int,
-              μ = mean.(gamble_values(b)))::Float64
+function voi1(b::Belief, cell::Int, μ=choice_values(b)[:])::Float64
     observed(b, cell) && return 0.
     n_feature, n_option = size(b.matrix)
     feature, option = Tuple(CartesianIndices(size(b.matrix))[cell])
@@ -37,7 +36,7 @@ function voi1(b::Belief, cell::Int,
     emax(new_dist, cv) - maximum(μ)
 end
 function voc1(b::Belief)
-    μ = mean.(gamble_values(b))
+    μ = choice_values(b)[:]
     map(computations(b)) do c
         observed(b, c) && return -Inf
         voi1(b, c, μ) - b.s.costs[c]

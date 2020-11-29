@@ -23,7 +23,7 @@ function summarize(f, effects)
 end
 
 M = map(Iterators.product([2, 5], [2, 5], 1:4)) do (n_outcome, n_feature, cost)
-    MetaMDP(n_outcome, n_feature, Normal(5, 1.75), ExperimentWeights(n_feature, 30), cost)
+    MetaMDP(n_outcome, n_feature, REWARD_DIST, ExperimentWeights(n_feature, 30), cost)
 end |> collect;
 @everywhere M = $M
 

@@ -9,7 +9,7 @@ function evaluate(pol::Policy, s::State, b=Belief(s), post_decision=nothing)
     total_p = 0.
     n_clicks = 0.
     cost = 0.
-    choice = zeros(s.m.n_gamble)
+    choice = zeros(s.m.n_option)
 
     function recurse(b, p, n, pd)
         # print("\n>>> ", p, "  ")
@@ -40,9 +40,6 @@ function evaluate(pol::Policy, s::State, b=Belief(s), post_decision=nothing)
     (;choice, cost, n_clicks, choice_val, meta_return)
 end
 
-expected_reward(pol::Policy, s::State) = evaluate(pol, s)
-
-
 function simulate(pol, s, b)
     clicks = Int[]
     x = rollout(pol, s, b) do b, c
@@ -51,8 +48,6 @@ function simulate(pol, s, b)
     choice = sample(Weights(choice_probs(b)))
     (choice, payoff=choice_values(s)[choice], x.cost, clicks)
 end
-
-# %% --------
 
 struct ExperimentWeights <: Distribution{Multivariate,Discrete}
     N::Int
@@ -78,3 +73,7 @@ function experiment_state(m::MetaMDP)
     # @assert m.reward_dist == Normal(5, 1.75)
     round_payoffs!(State(m))
 end
+
+REWARD_DIST = Normal(5, 1.75)
+WEIGHTS(n_feature) = ExperimentWeights(n_feature, 30)
+
