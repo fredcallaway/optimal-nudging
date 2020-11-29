@@ -8,33 +8,33 @@ function emax(d::Distribution, c::Float64)
 end
 emax(x::Float64, c::Float64) = max(x, c)
 
-function dc_options(b::Belief; cost=nothing)
+function dc_plans(b::Belief; cost=nothing)
     cost = cost == nothing ? b.m.cost : cost
-    n_outcome, n_gamble = size(b.matrix)
-    μ = mean.(gamble_values(b))
-    options = map(1:n_gamble) do gamble
-        ranked_clicks = sortperm([-d.σ for d in b.matrix[:, gamble]])
-        cv = competing_value(µ, gamble)
-        map(1:n_outcome) do n_click
+    n_feature, n_option = size(b.matrix)
+    current_best = maximum(choice_values(b))
+    plans = map(1:n_option) do option
+        ranked_clicks = sortperm([-d.σ for d in b.matrix[:, option]])
+        cv = competing_value(µ, option)
+        map(1:n_feature) do n_click
             chosen = ranked_clicks[1:n_click]
             new_dist = Normal(0, 1e-20)
-            for i in 1:n_outcome
-                d = b.matrix[i, gamble]
+            for i in 1:n_feature
+                d = b.matrix[i, option]
                 new_dist += (i in chosen ? d : d.μ)
             end
-            voi = emax(new_dist, cv) - maximum(μ)
+            voi = emax(new_dist, cv) - current_best
             voc = voi - cost * n_click
-            clicks = chosen .+ (n_outcome * (gamble - 1))
+            clicks = chosen .+ (n_feature * (option - 1))  # convert to full matrix indices
             (voc=voc, clicks=clicks)
         end
     end |> flatten
-    push!(options, (voc=0., clicks=[⊥]))
-    options
+    push!(plans, (voc=0., clicks=[⊥]))
+    plans
 end
 
 function select_option(b::Belief)
-    options = dc_options(b)
-    voc, clicks = invert(options)
+    plans = dc_plans(b)
+    voc, clicks = invert(plans)
     voc .+= 1e-10 .* rand(length(voc))
     v, i = findmax(voc)
     clicks[i]

@@ -25,8 +25,8 @@ Base.zero(x::Normal)::Normal = Normal(0, σ_OBS)
 
 "Parameters defining a class of mouselab problems."
 @with_kw struct MetaMDP
-    n_gamble::Int = 7
-    n_outcome::Int = 4
+    n_option::Int = 7
+    n_feature::Int = 4
     reward_dist::Distribution
     weight_dist::Distribution
     cost::Float64 = 0.01
@@ -46,8 +46,8 @@ State(m::MetaMDP, weights::Vector{Float64}, payoffs::Matrix{Float64}, costs::Mat
 
 function State(m::MetaMDP; 
         weights::Vector=rand(m.weight_dist),
-        payoffs::Matrix=rand(m.reward_dist, (m.n_outcome, m.n_gamble)),
-        costs::Matrix = m.cost * ones(m.n_outcome, m.n_gamble)
+        payoffs::Matrix=rand(m.reward_dist, (m.n_feature, m.n_option)),
+        costs::Matrix = m.cost * ones(m.n_feature, m.n_option)
     )
     State(m, weights, payoffs, costs, weights .* payoffs)
 end
@@ -60,7 +60,7 @@ struct Belief{T <: Distribution}
 end
 "Initial belief for a given problem."
 Belief(s::State) = begin
-    X = [s.weights[i] * s.m.reward_dist for i in 1:s.m.n_outcome, j in 1:s.m.n_gamble]
+    X = [s.weights[i] * s.m.reward_dist for i in 1:s.m.n_feature, j in 1:s.m.n_option]
     Belief(s.m, s, X)
 end
 Belief(m::MetaMDP) = Belief(State(m))
@@ -95,11 +95,6 @@ end
 
 observed(b::Belief, cell::Int) = b.matrix[cell].σ == σ_OBS
 unobserved(b::Belief) = filter(c -> !observed(b, c), 1:length(b.matrix))
-
-"Value of each gamble according to a belief"
-function gamble_values(b::Belief)::Vector{Normal{Float64}}
-    sum(b.matrix, dims=1)[:]
-end
 
 get_index(b::Belief, c::Int) = Tuple(CartesianIndices(size(b.matrix))[c])
 choice_values(s::State) = sum(s.weighted_payoffs; dims=1)

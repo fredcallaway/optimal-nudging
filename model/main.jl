@@ -22,8 +22,8 @@ function summarize(f, effects)
     end;
 end
 
-M = map(Iterators.product([2, 5], [2, 5], 1:4)) do (n_gamble, n_outcome, cost)
-    MetaMDP(n_gamble, n_outcome, Normal(5, 1.75), ExperimentWeights(n_outcome, 30), cost)
+M = map(Iterators.product([2, 5], [2, 5], 1:4)) do (n_outcome, n_feature, cost)
+    MetaMDP(n_outcome, n_feature, Normal(5, 1.75), ExperimentWeights(n_feature, 30), cost)
 end |> collect;
 @everywhere M = $M
 
@@ -40,8 +40,8 @@ end
 
 # %% --------
 mdp_features(m) = (
-    n_option = m.n_gamble,
-    n_feature = m.n_outcome,
+    n_option = m.n_outcome,
+    n_feature = m.n_feature,
     reveal_cost = m.cost
 )
 default_effects = sample_many(sample_default_effect, M, 10000, DCPolicy);
@@ -64,8 +64,8 @@ end
 
 
 # %% ==================== Suggest new ====================
-M = map(Iterators.product([5], [2,5], [2])) do (n_gamble, n_outcome, cost)
-    MetaMDP(n_gamble, n_outcome, Normal(5, 1.75), ExperimentWeights(n_outcome, 30), cost)
+M = map(Iterators.product([5], [2,5], [2])) do (n_outcome, n_feature, cost)
+    MetaMDP(n_outcome, n_feature, Normal(5, 1.75), ExperimentWeights(n_feature, 30), cost)
 end |> collect;
 @everywhere M = $M
 

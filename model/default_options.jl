@@ -2,12 +2,12 @@
 function estimate_default_beliefs(m; N=1000000)
     default_vals = Float64[]; other_vals = Float64[]
     for i in 1:N
-        payoffs = rand(m.reward_dist, (m.n_outcome, m.n_gamble))
+        payoffs = rand(m.reward_dist, (m.n_feature, m.n_option))
         default = argmax(sum(payoffs; dims=1)).I[2]
-        for g in 1:m.n_gamble
-            lst = g == default ? default_vals : other_vals
-            for o in 1:m.n_outcome
-                push!(lst, payoffs[o, g])
+        for option in 1:m.n_option
+            lst = option == default ? default_vals : other_vals
+            for feature in 1:m.n_feature
+                push!(lst, payoffs[feature, option])
             end
         end
     end
@@ -20,9 +20,9 @@ end
 
 function apply_default!(b::Belief, default::Int; use_cache=true)
     D = use_cache ? DEFAULT_BELIEFS[hash(b.m)] : estimate_default_beliefs(b.m)
-    for g in 1:b.m.n_gamble
-        d = g == default ? D.default : D.other
-        b.matrix[:, g] .= b.s.weights .* d
+    for option in 1:b.m.n_option
+        d = option == default ? D.default : D.other
+        b.matrix[:, option] .= b.s.weights .* d
     end
     b
 end

@@ -63,6 +63,17 @@ g.set_xticklabels(['Savvy', 'Naïve'])
 
 show()
 
+# %% ==================== Benefits ====================
+
+g = sns.catplot('naive', 'meta_return',
+    data=data['model'].query('reveal_cost == 2 and n_option == 5'),
+    hue='after', col='n_feature', height=4,
+    palette={0: 'C2', 1: '#AED1B2'},
+    sharey=False,
+    kind='point', legend=False)
+show()
+
+
 # %% ==================== After x Naive ====================
 df = data['model'].query('n_feature == 5 and n_option == 5')
 

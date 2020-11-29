@@ -26,14 +26,14 @@ emax(x::Float64, c::Float64) = max(x, c)
 function voi1(b::Belief, cell::Int,
               μ = mean.(gamble_values(b)))::Float64
     observed(b, cell) && return 0.
-    n_outcome, n_gamble = size(b.matrix)
-    outcome, gamble = Tuple(CartesianIndices(size(b.matrix))[cell])
+    n_feature, n_option = size(b.matrix)
+    feature, option = Tuple(CartesianIndices(size(b.matrix))[cell])
     new_dist = Normal(0, σ_OBS)
-    for i in 1:n_outcome
-        d = b.matrix[i, gamble]
-        new_dist += (i == outcome ? d : d.μ)
+    for i in 1:n_feature
+        d = b.matrix[i, option]
+        new_dist += (i == feature ? d : d.μ)
     end
-    cv = competing_value(µ, gamble)
+    cv = competing_value(µ, option)
     emax(new_dist, cv) - maximum(μ)
 end
 function voc1(b::Belief)

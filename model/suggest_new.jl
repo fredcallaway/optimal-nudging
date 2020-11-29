@@ -1,6 +1,6 @@
-function reveal_best_outcome!(b::Belief, s::State, g::Int)
-    o = argmax(s.payoffs[:, g])
-    cell = LinearIndices(b.matrix)[o, g]
+function reveal_best_feature!(b::Belief, s::State, option::Int)
+    feature = argmax(s.payoffs[:, option])
+    cell = LinearIndices(b.matrix)[feature, option]
     observe!(b, s, cell)
 end
 
@@ -14,18 +14,18 @@ end
 
 function add_new_option(s::State, b::Belief, naive::Bool)
     # TODO: maybe prevent clicking the other ones
-    m1 = mutate(s.m, n_gamble=s.m.n_gamble+1)
+    m1 = mutate(s.m, n_option=s.m.n_option+1)
 
     # New state
-    new_payoffs = round_payoffs!(rand(m1.reward_dist, m1.n_outcome))
+    new_payoffs = round_payoffs!(rand(m1.reward_dist, m1.n_feature))
     payoffs = [s.payoffs new_payoffs]
-    s1 = State(m1, s.weights, payoffs, [s.costs m1.cost .* ones(m1.n_outcome)])
+    s1 = State(m1, s.weights, payoffs, [s.costs m1.cost .* ones(m1.n_feature)])
 
     # New belief
     best_feature_val, best_feature = findmax(new_payoffs)
 
-    new_beliefs = map(eachindex(s.weights), s.weights, new_payoffs) do o, w, payoff
-        if o == best_feature
+    new_beliefs = map(eachindex(s.weights), s.weights, new_payoffs) do feature, w, payoff
+        if feature == best_feature
             Normal(w * payoff, σ_OBS)
         else
             if naive
@@ -59,7 +59,7 @@ function simulate_suggest(pol, s, b, naive, after)
 
     (naive=Int(naive), after=Int(after), decision_cost=cost, payoff,
      weight_dev = sum(abs.(s.weights .- mean(s.weights))),
-     choose_suggested = Int(choice == s.m.n_gamble+1))
+     choose_suggested = Int(choice == s.m.n_option+1))
 end
 
 function sample_suggest_new_effect(m, polclass=DCPolicy)
