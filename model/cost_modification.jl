@@ -20,14 +20,19 @@ end
 
 function make_objective(s::State, budget::Float64; make_pol=MetaGreedy, n=nothing)
     pol = make_pol(s.m)
-    return (select::BitVector) -> begin
-        sale_per_cell = budget / sum(select)
-        undo! = sale!(s, select, budget)
-        er = n != nothing ? expected_reward(pol, s, n=n) : expected_reward(pol, s)
-        er = n != nothing ? expected_reward(pol, s, n=n) : expected_reward(pol, s)
-        undo!()
-        return er
+    objective(select::BitVector) = evaluate(pol, sale(s, select, budget)).meta_return
+end
+
+
+function make_objective(m::MetaMDP, payoffs::Matrix, budget::Float64; make_pol=MetaGreedy, n_weight=1000)
+    pol = make_pol(m)
+    # states = [State(m; payoffs=payoffs) for i in 1:n_weight]
+    states = map(1:n_weight) do s
+        s = State(m; payoffs=payoffs)
+        s.weights .+= .001 .* randn(length(s.weights))
+        s
     end
+    objective(select::BitVector) = mean(evaluate(pol, sale(s, select, budget)).meta_return for s in states)
 end
 
 # function make_loss(s::State, budget::Float64=0.1)
@@ -57,12 +62,17 @@ function best_cell_select(s::State)
 end
 
 "Greedily searches for cells to put on sale"
-function greedy_select(s::State, budget::Float64; init=false, max_sale=1000)
-    # use exact expected_reward for non-noisy policies
-    # n = pol isa Policy ? nothing : 10000
+function greedy_select(s::State, budget::Float64; init=false, max_flips=1000)
+    init = BitVector(fill(init, length(s.costs)))
+    greedy_select(make_objective(s, budget), init, max_flips)
+end
+function greedy_select(m::MetaMDP, payoffs::Matrix, budget::Float64; init=false, max_flips=1000)
+    init = BitVector(fill(init, length(payoffs)))
+    greedy_select(make_objective(m, payoffs, budget), init, max_flips)
+end
 
-    objective = make_objective(s, budget)
-    x = BitVector(fill(init, length(s.costs)))
+function greedy_select(objective::Function, init, max_flips)
+    x = deepcopy(init)
     best = objective(x)
     try_flip(i) = begin
         x[i] = !x[i]
@@ -70,7 +80,8 @@ function greedy_select(s::State, budget::Float64; init=false, max_sale=1000)
         x[i] = !x[i]
         return l
     end
-    for _ in 1:max_sale
+    for iter in 1:max_flips
+        println("($iter) ", x)
         obj, i = findmax(try_flip.(1:length(x)))
         if obj > best
             best = obj

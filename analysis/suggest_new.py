@@ -17,30 +17,30 @@ data = {
     # 'human': load_data('pilot5_supersize')
 }
 
-# %% ==================== After x Naive ====================
-df = data['model'].query('n_feature == 5 and n_option == 5')
+# %% ==================== Main figure ====================
 
-g = sns.catplot('reveal_cost', 'choose_suggested', data=df, 
-    hue='after', col='naive', palette={0: 'C2', 1: '#AED1B2'},
+g = sns.catplot('n_feature', 'choose_suggested',
+    data=data['model'].query('reveal_cost == 2'),
+    hue='after', col='naive', height=4,
+    palette={0: 'C2', 1: '#AED1B2'},
     kind='point', legend=False)
-ax = g.axes.flat[0]
-handles, labels = ax.get_legend_handles_labels()
-new_labels = ['Early', 'Late']
-ax.legend(handles=handles, labels=new_labels)
+
 for ax, t in zip(g.axes.flat, ['Savvy', 'Naïve']):
     ax.set_title(t)
 
-g.set_xlabels('Reveal Cost')
+g.set_xlabels("")
+g.set_xticklabels(["2 Features", "5 Features"])
 g.set_ylabels('Prob Choose Suggested')
+plot_chance(g, [1/6])
 
-show()
+g.set(ylim=(0, 0.5), yticks=(0, 0.5))
+
+show('suggestion')
 
 # %% --------
-
-g = sns.catplot('reveal_cost', 'choose_suggested',
-    data=data['model'].query('n_option == 5 and n_feature==5'),
-    hue='after', col='naive',
-    palette={0: 'C2', 1: '#AED1B2'},
+g = catplot(data['model'].query('reveal_cost == 2'),
+   'naive', 'choose_suggested', col='n_feature',
+    hue='after', palette={0: 'C2', 1: '#AED1B2'},
     kind='point', legend=False)
 show()
 
@@ -62,6 +62,27 @@ g.set_xticklabels(['Savvy', 'Naïve'])
 
 
 show()
+
+# %% ==================== After x Naive ====================
+df = data['model'].query('n_feature == 5 and n_option == 5')
+
+g = sns.catplot('reveal_cost', 'choose_suggested', data=df, 
+    hue='after', col='naive', palette={0: 'C2', 1: '#AED1B2'},
+    kind='point', legend=False)
+ax = g.axes.flat[0]
+handles, labels = ax.get_legend_handles_labels()
+new_labels = ['Early', 'Late']
+ax.legend(handles=handles, labels=new_labels)
+for ax, t in zip(g.axes.flat, ['Savvy', 'Naïve']):
+    ax.set_title(t)
+
+g.set_xlabels('Reveal Cost')
+g.set_ylabels('Prob Choose Suggested')
+
+show()
+
+# %% --------
+
 
 
 # %% ==================== Suggest early ====================

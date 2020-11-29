@@ -64,14 +64,14 @@ end
 
 
 # %% ==================== Suggest new ====================
-M = map(Iterators.product([2, 5], [2, 5], 1:4)) do (n_gamble, n_outcome, cost)
+M = map(Iterators.product([5], [2,5], [2])) do (n_gamble, n_outcome, cost)
     MetaMDP(n_gamble, n_outcome, Normal(5, 1.75), ExperimentWeights(n_outcome, 30), cost)
 end |> collect;
 @everywhere M = $M
 
 @everywhere include("suggest_new.jl")
 d = sample_suggest_new_effect(M[end])
-new_effects = sample_many(sample_suggest_new_effect, M, 10000, DCPolicy);
+new_effects = sample_many(sample_suggest_new_effect, M, 50000, DCPolicy);
 
 data = mapmany(M, new_effects) do m, de
     mapmany(de) do d

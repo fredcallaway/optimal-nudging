@@ -40,6 +40,9 @@ function evaluate(pol::Policy, s::State, b=Belief(s), post_decision=nothing)
     (;choice, cost, n_clicks, choice_val, meta_return)
 end
 
+expected_reward(pol::Policy, s::State) = evaluate(pol, s)
+
+
 function simulate(pol, s, b)
     clicks = Int[]
     x = rollout(pol, s, b) do b, c

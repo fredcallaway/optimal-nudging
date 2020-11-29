@@ -74,9 +74,8 @@ function expected(f::Function, s::State, pol, n=1000)
 end
 
 function expected_reward(pol, s::State; n=1000)
-    @assert false
     expected(s, pol, n) do roll
-        roll.choice_value - roll.total_cost
+        roll.reward
     end
 end
 

@@ -44,12 +44,12 @@ State(m::MetaMDP, weights::Vector{Float64}, payoffs::Matrix{Float64}, costs::Mat
     m, weights, payoffs, costs, weights .* payoffs
 )
 
-State(m::MetaMDP) = begin
-    # @unpack reward_dist, weight_dist, n_outcome, n_gamble = m
-    w = rand(m.weight_dist)
-    payoffs = rand(m.reward_dist, (m.n_outcome, m.n_gamble))
-    costs = m.cost * ones(m.n_outcome, m.n_gamble)
-    State(m, w, payoffs, costs, w .* payoffs)
+function State(m::MetaMDP; 
+        weights::Vector=rand(m.weight_dist),
+        payoffs::Matrix=rand(m.reward_dist, (m.n_outcome, m.n_gamble)),
+        costs::Matrix = m.cost * ones(m.n_outcome, m.n_gamble)
+    )
+    State(m, weights, payoffs, costs, weights .* payoffs)
 end
 
 "A belief about the values for a State."
