@@ -38,7 +38,7 @@ function add_new_option(s::State, b::Belief, naive::Bool)
     s1 = State(m1, s.weights, payoffs, [s.costs m1.cost .* ones(m1.n_feature)])
 
     # New belief
-    new_beliefs = suggestion_belief(s.weights, s.m.reward_dist, new_payoffs, naive)
+    new_beliefs = suggestion_beliefs(s.weights, s.m.reward_dist, new_payoffs, naive)
     b1 = Belief(m1, s1, [b.matrix new_beliefs])
 
     s1, b1

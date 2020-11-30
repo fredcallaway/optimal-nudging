@@ -1,11 +1,13 @@
 def load_data(name):
+    name = 'supersize_data'
     df = pd.read_csv(f'../data/{name}.csv')
     df.rename(columns={
         'cost': 'reveal_cost', 
         'chose_nudge': 'choose_suggested',
         'og_baskets': 'n_option',
         'num_features': 'n_feature',
-        'weights_deviation': 'weight_dev'
+        'weights_deviation': 'weight_dev',
+        'net_earnings': 'meta_return'
 
     }, inplace=True)
     df = df.query('trial_nudge != "control"').copy()
@@ -13,29 +15,30 @@ def load_data(name):
     return df
 
 data = {
-    'model': load_sim('suggest_new_sims'),
-    # 'human': load_data('pilot5_supersize')
+    'model': load_sim('suggest_new_sims', cost=2),
+    'human': load_data('supersize_data')
 }
 
 # %% ==================== Main figure ====================
 
-g = sns.catplot('n_feature', 'choose_suggested',
-    data=data['model'].query('reveal_cost == 2'),
-    hue='after', col='naive', height=4,
-    palette={0: 'C2', 1: '#AED1B2'},
-    kind='point', legend=False)
+def suggestion(df, agent):
+    g = sns.catplot('n_feature', 'choose_suggested',
+        data=df,
+        hue='after', col='naive', height=4,
+        palette={0: 'C2', 1: '#AED1B2'},
+        kind='point', legend=False)
 
-for ax, t in zip(g.axes.flat, ['Savvy', 'Naïve']):
-    ax.set_title(t)
+    for ax, t in zip(g.axes.flat, ['Savvy', 'Naïve']):
+        ax.set_title(t)
 
-g.set_xlabels("")
-g.set_xticklabels(["2 Features", "5 Features"])
-g.set_ylabels('Prob Choose Suggested')
-plot_chance(g, [1/6])
+    g.set_xlabels("")
+    g.set_xticklabels(["2 Features", "5 Features"])
+    g.set_ylabels('Prob Choose Suggested')
+    plot_chance(g, [1/6])
 
-g.set(ylim=(0, 0.5), yticks=(0, 0.5))
+    g.set(ylim=(0, 1), yticks=(0, 1))
 
-show('suggestion')
+plot_both(suggestion, data)
 
 # %% --------
 g = catplot(data['model'].query('reveal_cost == 2'),
@@ -64,14 +67,15 @@ g.set_xticklabels(['Savvy', 'Naïve'])
 show()
 
 # %% ==================== Benefits ====================
+def suggestion_benefits(df, agent):
+    g = sns.catplot('naive', 'meta_return',
+        data=df,
+        hue='after', col='n_feature', height=4,
+        palette={0: 'C2', 1: '#AED1B2'},
+        sharey=False,
+        kind='point', legend=False)
 
-g = sns.catplot('naive', 'meta_return',
-    data=data['model'].query('reveal_cost == 2 and n_option == 5'),
-    hue='after', col='n_feature', height=4,
-    palette={0: 'C2', 1: '#AED1B2'},
-    sharey=False,
-    kind='point', legend=False)
-show()
+plot_both(suggestion_benefits, data)
 
 
 # %% ==================== After x Naive ====================
