@@ -1,3 +1,5 @@
+include("timeout.jl")
+
 using StatsFuns: logsumexp
 
 function State(t::Trial)
@@ -27,7 +29,8 @@ function suggest_late_likelihood(t::Trial; naive::Bool)
 end
 
 function control_likelihood(t; kws...)
-    evaluate(MetaGreedy(s.m), State(t)).choice
+    s = State(t)
+    evaluate(MetaGreedy(s.m), s).choice
 end
 
 function likelihood(t::Trial; kws...)
@@ -36,7 +39,19 @@ function likelihood(t::Trial; kws...)
         "post-supersize" => suggest_late_likelihood,
         "pre-supersize" => suggest_early_likelihood
     )[t.nudge_type]
-    like(t; kws...)
+
+    try
+        timeout(240, t) do
+            like(t; kws...)
+        end
+    catch err
+        if err isa TimeoutException
+            n_opt = size(t.payoffs, 2) 
+            ones(n_opt) ./ n_opt
+        else
+            rethrow()
+        end
+    end
 end
 
 lapse(p, ε) = (1 - ε) .* p .+ ε .* ones(length(p)) ./ length(p)

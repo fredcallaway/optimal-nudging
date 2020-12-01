@@ -1,4 +1,4 @@
-include("utils.jl")
+rinclude("utils.jl")
 include("meta_mdp.jl")
 include("directed_cognition.jl")
 include("meta_greedy.jl")
@@ -12,6 +12,7 @@ function evaluate(pol::Policy, s::State, b=Belief(s), post_decision=nothing)
     choice = zeros(s.m.n_option)
 
     function recurse(b, p, n, pd)
+        yield()  # allow interruption
         # print("\n>>> ", p, "  ")
         # display(b)
         v = voc(pol, b)
@@ -21,14 +22,14 @@ function evaluate(pol::Policy, s::State, b=Belief(s), post_decision=nothing)
             else
                 n_clicks += p * n
                 choice .+= p .* choice_probs(b)
-                total_p += p
+                total_p += pr
             end
         else
-            opt_c = findall(softmax(1e20 * v) .!= 0)
+            opt_c = findall(isequal(maximum(v)), v)
             p /= length(opt_c)
             for c in opt_c
                 cost += p * s.costs[c]
-                recurse(observe(b, s, c), p, n+1, pd)
+                recurse(observe(b, s, c), p , n+1, pd)
             end
         end
     end

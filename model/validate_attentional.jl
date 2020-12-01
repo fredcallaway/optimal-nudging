@@ -41,11 +41,10 @@ X = map(E) do e
     end
 end |> invert
 
-X.optimal .- X.extreme
-X.optimal .- X.random
-X.optimal .- X.none
 
-X.none
-
+@show X.greedy .- X.extreme
+@show X.greedy .- X.random
+@show X.greedy .- X.none
+@show X.none
 
 # %% --------

@@ -109,7 +109,7 @@ function get_reductions(s; reduction=2, n_reduce=5)
         none = BitVector(fill(false, length(s.costs))),
         random = random_select(s.costs, reduction, n_reduce),
         extreme = extreme_select(s.m, s.payoffs, s.costs, reduction, n_reduce),
-        # greedy = greedy_select(s.m, s.payoffs, s.costs, reduction, n_reduce),
+        greedy = greedy_select(s.m, s.payoffs, s.costs, reduction, n_reduce),
     )
     map(selections) do sel
         reduce_cost(s, sel, reduction)
