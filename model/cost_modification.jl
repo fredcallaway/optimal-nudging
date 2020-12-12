@@ -1,6 +1,35 @@
 # include("mouselab.jl")
 # include("metrics.jl")
 
+function expected_reward(s::State, b=Belief(s))
+    # For efficient cache lookup, we use as a key an unsigned integer where each position in the
+    # binary representation is a flag for whether the corresponding cell has been revealed.
+    pol = MetaGreedy(s.m)
+    flag = UInt64(1)
+    @assert length(s.payoffs) < 64  # a 64 bit flag means this is the most cells we can handle
+
+    choice_val = choice_values(s)
+
+
+    cache = Dict{UInt64,Float64}()
+    function recurse(b::Belief, k::UInt)
+        yield()  # allow interruption
+        haskey(cache, k) && return cache[k]
+        v = voc(pol, b)
+        if all(v .<= 0) # terminate
+            return cache[k] = first(choice_val * choice_probs(b))
+        else
+            opt_c = findall(isequal(maximum(v)), v)
+            probs = mapreduce(+, opt_c) do c
+                recurse(observe(b, s, c), k + (flag << c)) - s.costs[c] 
+            end
+            probs /= length(opt_c)
+            return cache[k] = probs
+        end
+    end
+    recurse(b, UInt(0))
+end
+
 function exp3_state(;n_option=5, n_feature=5, base_cost=3, reduction=2, n_rand_reduce=5)
     m = MetaMDP(n_option, n_feature, REWARD_DIST, WEIGHTS(n_feature), base_cost)
     s = State(m)
@@ -28,10 +57,10 @@ function make_objective(m::MetaMDP, payoffs::Matrix, costs::Matrix, reduction::R
     # states = [State(m; payoffs=payoffs) for i in 1:n_weight]
     states = map(1:n_weight) do s
         s = State(m; payoffs=payoffs, costs=costs)
-        s.weights .+= .001 .* randn(length(s.weights))
+        # s.weights .+= .001 .* randn(length(s.weights))
         s
     end
-    objective(select::BitVector) = mean(evaluate(pol, reduce_cost(s, select, reduction)).meta_return for s in states)
+    objective(select::BitVector) = mean(expected_reward(reduce_cost(s, select, reduction)) for s in states)
 end
 
 # %% ==================== Optimizing ====================
@@ -115,3 +144,5 @@ function get_reductions(s; reduction=2, n_reduce=5)
         reduce_cost(s, sel, reduction)
     end
 end
+
+

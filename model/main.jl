@@ -5,9 +5,9 @@ using Serialization
 using CSV
 using DataFrames
 flatten = SplitApplyCombine.flatten
+@everywhere include("nudging_base.jl")
 
 # %% --------
-@everywhere include("nudging_base.jl")
 
 function sample_many(f, M, N, args...; kws...)
     X = @showprogress pmap(Iterators.product(M, 1:N); batch_size=500) do (m, i)
@@ -22,16 +22,21 @@ function summarize(f, effects)
     end;
 end
 
-M = map(Iterators.product([2, 5], [2, 5], 1:4)) do (n_outcome, n_feature, cost)
-    MetaMDP(n_outcome, n_feature, REWARD_DIST, ExperimentWeights(n_feature, 30), cost)
+mdp_features(m) = (
+    n_option = m.n_option,
+    n_feature = m.n_feature,
+    reveal_cost = m.cost
+)
+
+# %% ==================== Default options ====================
+@everywhere include("default_options.jl")
+mkpath("results/defaults")
+
+M = map(Iterators.product([2, 5], [2, 5], 1:4)) do (n_option, n_feature, cost)
+    MetaMDP(n_option, n_feature, REWARD_DIST, ExperimentWeights(n_feature, 30), cost)
 end |> collect;
 @everywhere M = $M
 
-
-# %% ==================== Default options ====================
-
-@everywhere include("default_options.jl")
-mkpath("results/defaults")
 let  # pre-compute default beliefs
     db = @showprogress pmap(estimate_default_beliefs, M)
     DEFAULT_BELIEFS = Dict(zip(hash.(M), db))
@@ -39,11 +44,7 @@ let  # pre-compute default beliefs
 end
 
 # %% --------
-mdp_features(m) = (
-    n_option = m.n_outcome,
-    n_feature = m.n_feature,
-    reveal_cost = m.cost
-)
+
 default_effects = sample_many(sample_default_effect, M, 10000, DCPolicy);
 data = mapmany(M, default_effects) do m, de
     mapmany(de) do d
@@ -64,12 +65,13 @@ end
 
 
 # %% ==================== Suggest new ====================
-M = map(Iterators.product([5], [2,5], [2])) do (n_outcome, n_feature, cost)
-    MetaMDP(n_outcome, n_feature, Normal(5, 1.75), ExperimentWeights(n_feature, 30), cost)
+@everywhere include("suggest_new.jl")
+
+M = map(Iterators.product([5], [5], [1,2,3,4])) do (n_option, n_feature, cost)
+    MetaMDP(n_option, n_feature, Normal(5, 1.75), ExperimentWeights(n_feature, 30), cost)
 end |> collect;
 @everywhere M = $M
 
-@everywhere include("suggest_new.jl")
 d = sample_suggest_new_effect(M[end])
 new_effects = sample_many(sample_suggest_new_effect, M, 50000, DCPolicy);
 

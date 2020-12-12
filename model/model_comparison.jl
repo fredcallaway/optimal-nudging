@@ -14,7 +14,7 @@ function num_optimal(t::Trial)
 end
 
 trials = load_trials("supersize_data");
-filter!(t-> num_optimal(t) <= 12, trials)
+# filter!(t-> num_optimal(t) <= 12, trials)
 grouped_trials = collect(group(t->t.participant_id, trials));
 
 marginals = @showprogress pmap(grouped_trials) do trials

@@ -1,4 +1,4 @@
-rinclude("utils.jl")
+include("utils.jl")
 include("meta_mdp.jl")
 include("directed_cognition.jl")
 include("meta_greedy.jl")
@@ -6,6 +6,7 @@ include("meta_greedy.jl")
 using StatsBase
 
 function evaluate(pol::Policy, s::State, b=Belief(s), post_decision=nothing)
+    @assert false
     total_p = 0.
     n_clicks = 0.
     cost = 0.
@@ -22,7 +23,7 @@ function evaluate(pol::Policy, s::State, b=Belief(s), post_decision=nothing)
             else
                 n_clicks += p * n
                 choice .+= p .* choice_probs(b)
-                total_p += pr
+                total_p += p
             end
         else
             opt_c = findall(isequal(maximum(v)), v)

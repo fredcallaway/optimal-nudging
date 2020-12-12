@@ -11,10 +11,11 @@ emax(x::Float64, c::Float64) = max(x, c)
 function dc_plans(b::Belief; cost=nothing)
     cost = cost == nothing ? b.m.cost : cost
     n_feature, n_option = size(b.matrix)
-    current_best = maximum(choice_values(b))
+    expected_values = choice_values(b)[:]
+    current_best = maximum(expected_values)
     plans = map(1:n_option) do option
         ranked_clicks = sortperm([-d.σ for d in b.matrix[:, option]])
-        cv = competing_value(µ, option)
+        cv = competing_value(expected_values, option)
         map(1:n_feature) do n_click
             chosen = ranked_clicks[1:n_click]
             new_dist = Normal(0, 1e-20)

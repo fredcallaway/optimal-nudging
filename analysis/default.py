@@ -94,9 +94,8 @@ def not_immediately(df, agent):
     g.set_xlabels('Weight Deviation Quartile')
 
 plot_both(not_immediately, data)
-show()
 
-not_immediately(data['human'], 'human')
+# not_immediately(data['human'], 'human')
 # df = load_sim('default_sims', 2)
 # not_immediately(df, 'model')
 # show()

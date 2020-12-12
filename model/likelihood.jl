@@ -2,6 +2,37 @@ include("timeout.jl")
 
 using StatsFuns: logsumexp
 
+function choice_likelihood(s::State, b=Belief(s), post_decision=nothing)
+
+    # For efficient cache lookup, we use as a key an unsigned integer where each position in the
+    # binary representation is a flag for whether the corresponding cell has been revealed.
+    pol = MetaGreedy(s.m)
+    flag = UInt64(1)
+    @assert length(s.payoffs) < 64  # a 64 bit flag means this is the most cells we can handle
+
+    cache = Dict{UInt64,Vector{Float64}}()
+    function recurse(b::Belief, pd::Bool, k::UInt)
+        yield()  # allow interruption
+        haskey(cache, k) && return cache[k]
+        v = voc(pol, b)
+        if all(v .<= 0) # terminate
+            if !pd  # not already applied
+                return cache[k] = recurse(post_decision(b), true, k + 1)
+            else
+                return cache[k] = choice_probs(b)
+            end
+        else
+            opt_c = findall(isequal(maximum(v)), v)
+            probs = mapreduce(+, opt_c) do c
+                recurse(observe(b, s, c), pd, k + (flag << c))
+            end
+            probs /= length(opt_c)
+            return cache[k] = probs
+        end
+    end
+    recurse(b, post_decision == nothing, UInt(0))
+end
+
 function State(t::Trial)
     nf, no = size(t.payoffs)
     m = MetaMDP(no, nf, REWARD_DIST, WEIGHTS(nf), NaN)
@@ -18,22 +49,20 @@ function suggest_early_likelihood(t::Trial; naive::Bool)
     s = State(t)
     b = Belief(s)
     apply_suggestion!(b, s, t.nudge_index, naive)
-    evaluate(MetaGreedy(s.m), s, b).choice
+    choice_likelihood(s, b)
 end
 
 function suggest_late_likelihood(t::Trial; naive::Bool)
     s = State(t)
-    b = Belief(s)
-    post_decision(b) = apply_suggestion!(deepcopy(b), s, t.nudge_index, naive)
-    evaluate(MetaGreedy(s.m), s, b, post_decision).choice
+    post_decision(b) = apply_suggestion!(Belief(s), s, t.nudge_index, naive)
+    choice_likelihood(s, Belief(s), post_decision)
 end
 
 function control_likelihood(t; kws...)
-    s = State(t)
-    evaluate(MetaGreedy(s.m), s).choice
+    choice_likelihood(State(t))
 end
 
-function likelihood(t::Trial; kws...)
+function likelihood(t::Trial; max_time=240, kws...)
     like = Dict(
         "control" => control_likelihood,
         "post-supersize" => suggest_late_likelihood,
@@ -41,7 +70,7 @@ function likelihood(t::Trial; kws...)
     )[t.nudge_type]
 
     try
-        timeout(240, t) do
+        timeout(max_time, t) do
             like(t; kws...)
         end
     catch err

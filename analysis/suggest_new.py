@@ -1,5 +1,4 @@
 def load_data(name):
-    name = 'supersize_data'
     df = pd.read_csv(f'../data/{name}.csv')
     df.rename(columns={
         'cost': 'reveal_cost', 
@@ -15,9 +14,11 @@ def load_data(name):
     return df
 
 data = {
-    'model': load_sim('suggest_new_sims', cost=2),
-    'human': load_data('supersize_data')
+    'model': load_sim('suggest_new_sims'),
+    'human': load_data('pilot_data/supersize-pilot-2')
 }
+# %% --------
+df = load_sim('suggest_new_sims')
 
 # %% ==================== Main figure ====================
 
@@ -36,15 +37,16 @@ def suggestion(df, agent):
     g.set_ylabels('Prob Choose Suggested')
     plot_chance(g, [1/6])
 
-    g.set(ylim=(0, 1), yticks=(0, 1))
+    g.set(ylim=(0, 0.6), yticks=(0, 0.6))
 
 plot_both(suggestion, data)
 
 # %% --------
-g = catplot(data['model'].query('reveal_cost == 2'),
-   'naive', 'choose_suggested', col='n_feature',
+g = catplot(data['model'].query('reveal_cost == 1 or reveal_cost == 4'),
+   'reveal_cost', 'choose_suggested',
     hue='after', palette={0: 'C2', 1: '#AED1B2'},
     kind='point', legend=False)
+g.set(ylim=(0, .6), yticks=(0, .6))
 show()
 
 # %% --------
