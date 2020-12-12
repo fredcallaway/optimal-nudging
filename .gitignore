@@ -2,5 +2,4 @@ __pycache__/
 fighist/
 average_vs_most.jl
 analysis/figs/
-model/results/
 model/scratch.jl
