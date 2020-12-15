@@ -30,7 +30,7 @@ function expected_reward(s::State, b=Belief(s))
     recurse(b, UInt(0))
 end
 
-function exp3_state(;n_option=5, n_feature=5, base_cost=3, reduction=2, n_rand_reduce=5)
+function exp3_state(;n_option=5, n_feature=5, base_cost=2, reduction=2, n_rand_reduce=5)
     m = MetaMDP(n_option, n_feature, REWARD_DIST, WEIGHTS(n_feature), base_cost)
     s = State(m)
     round_payoffs!(s)
