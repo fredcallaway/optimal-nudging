@@ -18,8 +18,6 @@ using ProgressMeter
     ) 
 end
 
-# %% --------
-
 trials = @showprogress pmap(1:1000) do i
     sample_attention_trial()
 end
