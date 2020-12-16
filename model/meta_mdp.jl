@@ -15,11 +15,11 @@ function softmax(x)
 end
 
 "Define basic arithmetic operations on Normal distributions."
-Base.:*(x::Number, n::Normal)::Normal = Normal(x * n.µ, x * n.σ)
-Base.:*(n::Normal, x::Number)::Normal = Normal(x * n.µ, x * n.σ)
+Base.:*(x::Real, n::Normal)::Normal = Normal(x * n.µ, x * n.σ)
+Base.:*(n::Normal, x::Real)::Normal = Normal(x * n.µ, x * n.σ)
 Base.:+(a::Normal, b::Normal)::Normal = Normal(a.μ + b.μ, √(a.σ^2 + b.σ^2))
-Base.:+(a::Normal, x::Number)::Normal = Normal(a.μ + x, a.σ)
-Base.:+(x::Number, a::Normal)::Normal = Normal(a.μ + x, a.σ)
+Base.:+(a::Normal, x::Real)::Normal = Normal(a.μ + x, a.σ)
+Base.:+(x::Real, a::Normal)::Normal = Normal(a.μ + x, a.σ)
 Base.zero(x::Normal)::Normal = Normal(0, σ_OBS)
 # %% ==================== ====================
 

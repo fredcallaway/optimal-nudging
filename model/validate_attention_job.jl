@@ -1,6 +1,7 @@
-jobs = collect(Iterators.product([3,5,10], 1:1000))
-n_reduce, i = jobs[parse(Int, ARGS[1])]
-out_path = "tmp/validate_attention/$n_reduce"
+jobs = collect(Iterators.product([3,5,7], [2,3,4], 1:10))
+n_reduce, cost, i = jobs[parse(Int, ARGS[1])]
+
+out_path = "tmp/validate_attention/reduce-cost/$n_reduce-$cost"
 mkpath(out_path)
 out_file = "$out_path/$i"
 
@@ -15,25 +16,18 @@ using Serialization
 include("nudging_base.jl")
 include("cost_modification.jl")
 
-function sample_attention_effect(;base_cost=3, reduction=2, n_reduce=5, n_rand_reduce=5, n_weight=10000)
-    # fix random_select
-    s = exp3_state(;base_cost, reduction, n_rand_reduce)
-    @time alt_costs = map(x->x.costs, get_reductions(s; reduction, n_reduce))
-
-    @time r = map(1:n_weight) do i
-        s1 = State(s.m; payoffs=s.payoffs, costs=s.costs)
-        # s1.weights .+= .001 .* randn(length(s1.weights))
-        map(alt_costs) do costs
-            expected_reward(mutate(s1, costs=costs))
-        end
+function sample_attention_effect(;kws...)
+    s, alt_costs = sample_attention_trial(;kws...)
+    rewards = map(alt_costs) do costs
+        expected_reward(mutate(s, costs=costs))
     end
-    flush(stdout)
-    map(mean, invert(r))
+    (;rewards..., max_payoff=maximum(choice_values(s)))
 end
 
-result = map(1:10) do j
-    sample_attention_effect(;n_reduce, n_rand_reduce=n_reduce)
+
+result = map(1:5000) do j
+    sample_attention_effect(;n_reduce, n_rand_reduce=n_reduce, base_cost=cost, reduction=cost)
 end
 
-serialize(out_file, (;n_reduce, result))
+serialize(out_file, (;n_reduce, cost, result))
 println("Wrote $out_file")

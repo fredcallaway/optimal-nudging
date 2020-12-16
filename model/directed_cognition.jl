@@ -60,6 +60,14 @@ DCPolicy(m::MetaMDP, replan::Bool=true) = DCPolicy(m, replan, [])
     end
 end
 
+function dc_optimal_clicks(b::Belief)
+    plans = dc_plans(b)
+    vals = group(p->p.clicks[1], p->p.voc, plans) .|> maximum
+    mval = maximum(vals)
+    [c for (c, v) in pairs(vals) if v == mval]
+end
+
+
 # struct EpsilonGreedy <: Policy
 #     π::Policy
 #     ε::Float64

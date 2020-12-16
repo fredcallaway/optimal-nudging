@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=validate
 #SBATCH --output=out/%A_%a
-#SBATCH --array=1-1000
+#SBATCH --array=1-90
 #SBATCH --time=120
 #SBATCH --mem-per-cpu=500
 #SBATCH --cpus-per-task=1
