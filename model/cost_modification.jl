@@ -1,7 +1,19 @@
 # include("mouselab.jl")
 # include("metrics.jl")
 
-function expected_reward(s::State, b=Belief(s))
+KNOWN_WEIGHTS = false
+
+function metagreedy_optimal_clicks(b::Belief)
+    v = voc1(b)
+    maxv = maximum(v)
+    maxv < 0 && return [⊥]
+    findall(isequal(maxv), v)
+end
+
+function expected_reward(s::State, b=Belief(s), optimal_clicks=metagreedy_optimal_clicks)
+    # Note: directed cognition actually performs worse than metagreedy which is why
+    # we use it here.
+
     # For efficient cache lookup, we use as a key an unsigned integer where each position in the
     # binary representation is a flag for whether the corresponding cell has been revealed.
     pol = MetaGreedy(s.m)
@@ -10,13 +22,12 @@ function expected_reward(s::State, b=Belief(s))
 
     choice_val = choice_values(s)
 
-
     cache = Dict{UInt64,Float64}()
     function recurse(b::Belief, k::UInt)
         yield()  # allow interruption
         haskey(cache, k) && return cache[k]
         # v = voc(pol, b)
-        opt_c = dc_optimal_clicks(b)
+        opt_c = optimal_clicks(b)
 
         if opt_c == [⊥]  # terminate
             return cache[k] = first(choice_val * choice_probs(b))
@@ -49,20 +60,16 @@ function reduce_cost(s::State, select, reduction)
     reduce_cost!(deepcopy(s), select, reduction)
 end
 
-function make_objective(s::State, reduction::Real; make_pol=MetaGreedy, n=nothing)
-    objective(select::BitVector) = expected_reward(reduce_cost(s, select, reduction))
+function make_objective(s::State, reduction::Real; known_weights::Bool)
+    if known_weights
+        objective1(select::BitVector) = expected_reward(reduce_cost(s, select, reduction))
+    else
+        states = map(1:1000) do i
+            State(s.m; payoffs=s.payoffs, costs=s.costs)
+        end
+        objective2(select::BitVector) = mean(expected_reward(reduce_cost(s1, select, reduction)) for s1 in states)
+    end
 end
-
-# function make_objective(m::MetaMDP, payoffs::Matrix, costs::Matrix, reduction::Real; make_pol=MetaGreedy, n_weight=1000)
-#     pol = make_pol(m)
-#     # states = [State(m; payoffs=payoffs) for i in 1:n_weight]
-#     states = map(1:n_weight) do s
-#         s = State(m; payoffs=payoffs, costs=costs)
-#         # s.weights .+= .001 .* randn(length(s.weights))
-#         s
-#     end
-#     objective(select::BitVector) = mean(expected_reward(reduce_cost(s, select, reduction)) for s in states)
-# end
 
 # %% ==================== Optimizing ====================
 
@@ -71,9 +78,9 @@ end
 #     init = BitVector(fill(init, length(s.costs)))
 #     greedy_select(make_objective(s, reduction), init, max_flips)
 # end
-function greedy_select(s::State, reduction::Real, n_reduce::Int; verbose=false)
+function greedy_select(s::State, reduction::Real, n_reduce::Int; known_weights=KNOWN_WEIGHTS, verbose=false)
     x = BitVector(fill(false, length(s.payoffs)))
-    objective = make_objective(s, reduction)
+    objective = make_objective(s, reduction; known_weights)
     
     function reduction_value(i)
         @assert !x[i]
@@ -113,17 +120,17 @@ function manyhot(N, hot)
     x
 end
 
-# function extreme_select(m, payoffs, costs, reduction, n_reduce)
-#     extremity = abs.(payoffs[:] .- m.reward_dist.μ)
-#     possible = reducible(costs, reduction)
-#     for i in eachindex(extremity)
-#         if i ∉ possible
-#             extremity[i] = 0
-#         end
-#     end
-#     chosen = partialsortperm(extremity, 1:n_reduce; rev=true)
-#     manyhot(length(payoffs), chosen)
-# end
+function extreme_select(m, payoffs, costs, reduction, n_reduce)
+    extremity = abs.(payoffs[:] .- m.reward_dist.μ)
+    possible = reducible(costs, reduction)
+    for i in eachindex(extremity)
+        if i ∉ possible
+            extremity[i] = 0
+        end
+    end
+    chosen = partialsortperm(extremity, 1:n_reduce; rev=true)
+    manyhot(length(payoffs), chosen)
+end
 
 reducible(costs, reduction) = filter(i->costs[i] >= reduction, 1:length(costs))
 
@@ -131,6 +138,9 @@ function random_select(costs, reduction, n_reduce)
     chosen = sample(reducible(costs, reduction), n_reduce; replace=false)
     manyhot(length(costs), chosen)
 end
+
+extreme_select(s::State, args...) = extreme_select(s.m, s.payoffs, s.costs, args...)
+greedy_select(s::State, args...) = greedy_select(s.m, s.payoffs, s.costs, args...)
 
 function get_reductions(s; reduction=2, n_reduce=5)
     selections = (

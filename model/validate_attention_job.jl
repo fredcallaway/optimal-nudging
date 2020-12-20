@@ -19,7 +19,13 @@ include("cost_modification.jl")
 function sample_attention_effect(;kws...)
     s, alt_costs = sample_attention_trial(;kws...)
     rewards = map(alt_costs) do costs
-        expected_reward(mutate(s, costs=costs))
+        if KNOWN_WEIGHTS
+            expected_reward(mutate(s, costs=costs))
+        else
+            1000 \ mapreduce(1:1000) do i
+                expected_reward(State(s.m; payoffs=s.payoffs, costs=costs))
+            end
+
     end
     (;rewards..., max_payoff=maximum(choice_values(s)))
 end
