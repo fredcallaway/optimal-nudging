@@ -128,6 +128,7 @@ function extreme_select(m, payoffs, costs, reduction, n_reduce)
             extremity[i] = 0
         end
     end
+    extremity .+= 1e-8 .* rand(length(extremity))  # break ties randomly
     chosen = partialsortperm(extremity, 1:n_reduce; rev=true)
     manyhot(length(payoffs), chosen)
 end
@@ -146,7 +147,7 @@ function get_reductions(s; reduction=2, n_reduce=5)
     selections = (
         # none = BitVector(fill(false, length(s.costs))),
         random = random_select(s.costs, reduction, n_reduce),
-        # extreme = extreme_select(s, reduction, n_reduce),
+        extreme = extreme_select(s, reduction, n_reduce),
         greedy = greedy_select(s, reduction, n_reduce),
     )
     map(selections) do sel
