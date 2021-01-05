@@ -22,7 +22,8 @@ PAL = {0: GRAY, 1: 'C0'}
 def load_sim(name, cost=None):
     df = pd.read_csv(f'../model/results/{name}.csv')
     df['meta_return'] = df.payoff - df.decision_cost
-    df.reveal_cost = df.reveal_cost.astype(int)
+    if 'reveal_cost' in df:
+        df.reveal_cost = df.reveal_cost.astype(int)
     df['choose_immediately'] = df.decision_cost == 0
     if cost is not None:
         return df.query(f'reveal_cost == {cost}')

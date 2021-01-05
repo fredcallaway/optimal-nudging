@@ -1,4 +1,5 @@
 using JSON
+using Serialization
 using ProgressMeter
 
 @everywhere include("nudging_base.jl")
@@ -16,4 +17,4 @@ trials = @showprogress pmap(1:1000) do i
 end
 
 write("results/attention_trials.json", json(trials))
-
+serialize("tmp/attention_trials", trials)

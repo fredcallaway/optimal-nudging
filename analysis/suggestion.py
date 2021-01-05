@@ -1,8 +1,27 @@
 
+def load_data(path):
+    df = pd.read_csv(path)
+    df.rename(columns={
+        'cost': 'reveal_cost', 
+        'chose_nudge': 'choose_default',
+        'og_baskets': 'n_option',
+        'num_features': 'n_feature',
+        'weights_deviation': 'weight_dev',
+        'gross_earnings': 'payoff',
+        'net_earnings': 'meta_return'
+    }, inplace=True)
+    df['choose_immediately'] = df.click_cost <= 1e-7
+    df['nudge'] = (df.trial_nudge == 'default').astype(int)
+    return df
+
+data = {
+    'model': load_sim('suggest_new_sims', 1),
+    'human': load_data('../data/final_experiments_data/supersize_data.csv')
+}
 
 # %% ==================== Choose suggestion ====================
 
-df = load_sim('suggest_sims')
+df = data['model']
 df['meta_return'] = df.payoff - df.decision_cost
 
 g = sns.catplot('reveal_cost', 'choose_suggested', 
