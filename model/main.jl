@@ -64,16 +64,16 @@ let
 end
 
 
-# %% ==================== Suggest new ====================
-@everywhere include("suggest_new.jl")
+# %% ==================== Supersize ====================
+@everywhere include("supersize.jl")
 
-M = map(Iterators.product([5], [5], [1,2,3,4])) do (n_option, n_feature, cost)
-    MetaMDP(n_option, n_feature, Normal(5, 1.75), ExperimentWeights(n_feature, 30), cost)
+M = map(Iterators.product([5], [2, 5], [1,2,3,4])) do (n_option, n_feature, cost)
+    MetaMDP(n_option, n_feature, REWARD_DIST, ExperimentWeights(n_feature, 30), cost)
 end |> collect;
 @everywhere M = $M
 
-d = sample_suggest_new_effect(M[end])
-new_effects = sample_many(sample_suggest_new_effect, M, 50000, DCPolicy);
+d = sample_supersize_effect(M[end])
+new_effects = sample_many(sample_supersize_effect, M, 50000, DCPolicy);
 
 data = mapmany(M, new_effects) do m, de
     mapmany(de) do d
@@ -86,5 +86,5 @@ let
     # ridiculous fix for a type instability bug...
     T = typeof(data[1])
     Tdata::Vector{T} = data
-    DataFrame(Tdata) |> CSV.write("results/suggest_new_sims.csv")
+    DataFrame(Tdata) |> CSV.write("results/supersize_sims.csv")
 end
