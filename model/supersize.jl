@@ -65,7 +65,7 @@ function simulate_supersize(pol, s, b, naive, after)
      choose_suggested = Int(choice == s.m.n_option+1))
 end
 
-function sample_supersize_effect(m, polclass=DCPolicy)
+function sample_supersize_effect(m, polclass=MetaGreedy)
     pol = polclass(m)
     s = experiment_state(m)
 

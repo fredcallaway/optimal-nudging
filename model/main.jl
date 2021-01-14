@@ -45,7 +45,7 @@ end
 
 # %% --------
 
-default_effects = sample_many(sample_default_effect, M, 10000, DCPolicy);
+default_effects = sample_many(sample_default_effect, M, 10000);
 data = mapmany(M, default_effects) do m, de
     mapmany(de) do d
         map(0:1, [d.without, d.with]) do nudge, x
@@ -73,7 +73,7 @@ end |> collect;
 @everywhere M = $M
 
 d = sample_supersize_effect(M[end])
-new_effects = sample_many(sample_supersize_effect, M, 50000, DCPolicy);
+new_effects = sample_many(sample_supersize_effect, M, 50000);
 
 data = mapmany(M, new_effects) do m, de
     mapmany(de) do d

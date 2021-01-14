@@ -38,7 +38,7 @@ function simulate_default(pol, s, b, default)
     )
 end
 
-function sample_default_effect(m::MetaMDP, polclass=DCPolicy)
+function sample_default_effect(m::MetaMDP, polclass=MetaGreedy)
     pol = polclass(m)
     s = experiment_state(m)
     b = Belief(s)

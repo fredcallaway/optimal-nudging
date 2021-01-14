@@ -24,7 +24,7 @@ function simulate_suggestion(pol, s, suggestion)
     (;choice, payoff, cost)
 end
 
-function sample_suggestion_effect(m, polclass=DCPolicy)
+function sample_suggestion_effect(m, polclass=MetaGreedy)
     # TODO: only allow choosing among the two
     pol = polclass(m)
     s = experiment_state(m)

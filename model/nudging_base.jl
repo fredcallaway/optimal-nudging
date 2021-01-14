@@ -1,6 +1,5 @@
 include("utils.jl")
 include("meta_mdp.jl")
-include("directed_cognition.jl")
 include("meta_greedy.jl")
 
 using StatsBase
