@@ -1,7 +1,7 @@
 __pycache__/
 fighist/
-average_vs_most.jl
 analysis/figs/
 model/scratch.jl
 .DS_Store
 analysis/old/
+model/bak/
