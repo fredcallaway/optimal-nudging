@@ -27,7 +27,7 @@ function simulate_attention(n_reduce, base_cost, reduction)
     m = exp3_state(;base_cost, reduction).m
     trials = deserialize("tmp/attention_trials-$n_reduce-$base_cost-$reduction")
     results = @showprogress map(trials) do t
-        mapmany(1:10) do i
+        mapreduce(vcat, 1:10) do i
             map(pairs(t.all_costs)) do nudge_type, costs
                 s = State(m, payoffs=t.payoffs, costs=costs)
                 sim = simulate(MetaGreedy(s.m), s, Belief(s))
@@ -36,7 +36,9 @@ function simulate_attention(n_reduce, base_cost, reduction)
             end
         end
     end
-    flatten(results) |> DataFrame |> CSV.write("results/attention_sims_alt-$n_reduce-$base_cost-$reduction.csv")
+    df = reduce(vcat, results) |> DataFrame
+    df |> CSV.write("results/attention_sims-$n_reduce-$base_cost-$reduction.csv")
+    df
 end
 
 
@@ -45,3 +47,8 @@ end
 
 write_attention_trials(3, 3, 2)
 simulate_attention(3, 3, 2)
+
+write_attention_trials(3, 1, -2)
+df = simulate_attention(3, 1, -2)
+# %% --------
+by(df, :nudge_type, :payoff=>mean)
