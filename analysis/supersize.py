@@ -14,9 +14,11 @@ def load_data(path):
     return df
 
 data = {
-    'model': load_sim('supersize_sims'),
+    'model': load_sim('supersize_sims', 2),
     'human': load_data('../data/final_experiments_data/supersize-experiment-2.csv')
 }
+
+data['human'].reveal_cost.value_counts()
 
 # %% ==================== Bars ====================
 
