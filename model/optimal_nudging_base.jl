@@ -155,7 +155,7 @@ function get_reductions(s; reduction=2, n_reduce=5)
     end
 end
 
-function sample_attention_trial(;base_cost=2, reduction=2, n_reduce=5, n_rand_reduce=5)
+function sample_cost_reduction_trial(;base_cost=2, reduction=2, n_reduce=5, n_rand_reduce=5)
     # fix random_select
     s = exp3_state(;base_cost, reduction, n_rand_reduce)
     alt_costs = map(x->x.costs, get_reductions(s; reduction, n_reduce))

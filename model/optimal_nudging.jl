@@ -5,11 +5,11 @@ using DataFrames
 using CSV
 
 @everywhere include("nudging_base.jl")
-@everywhere include("cost_modification.jl")
+@everywhere include("optimal_nudging_base.jl")
 
 function write_attention_trials(n_reduce, base_cost, reduction)
     trials = @showprogress pmap(1:1000) do i
-        s, alt_costs = sample_attention_trial(;n_reduce, n_rand_reduce=n_reduce, base_cost, reduction)
+        s, alt_costs = sample_cost_reduction_trial(;n_reduce, n_rand_reduce=n_reduce, base_cost, reduction)
         (
             problem_id = hash(s),
             payoffs = Int.(s.payoffs),

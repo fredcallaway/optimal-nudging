@@ -5,3 +5,4 @@ model/scratch.jl
 .DS_Store
 analysis/old/
 model/bak/
+analysis/figs-dcpolicy/
