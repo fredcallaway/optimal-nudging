@@ -7,8 +7,8 @@ using CSV
 @everywhere include("nudging_base.jl")
 @everywhere include("optimal_nudging_base.jl")
 
-function write_attention_trials(n_reduce, base_cost, reduction)
-    trials = @showprogress pmap(1:1000) do i
+function write_attention_trials(n_reduce, base_cost, reduction; N=1000)
+    trials = @showprogress pmap(1:N) do i
         s, alt_costs = sample_cost_reduction_trial(;n_reduce, n_rand_reduce=n_reduce, base_cost, reduction)
         (
             problem_id = hash(s),
@@ -20,6 +20,7 @@ function write_attention_trials(n_reduce, base_cost, reduction)
 
     write("results/attention_trials-$n_reduce-$base_cost-$reduction.json", json(trials))
     serialize("tmp/attention_trials-$n_reduce-$base_cost-$reduction", trials)
+    return trials
 end
 
 
@@ -47,8 +48,15 @@ end
 
 write_attention_trials(3, 3, 2)
 simulate_attention(3, 3, 2)
-
-write_attention_trials(3, 1, -2)
+# %% --------
+trials = write_attention_trials(3, 1, -2)
+n_reduce =3; base_cost = 1; reduction = -2
+trials = deserialize("tmp/attention_trials-$n_reduce-$base_cost-$reduction")
 df = simulate_attention(3, 1, -2)
 # %% --------
+
+
+# %% --------
+head(df)
+by(df, :nudge_type, :decision_cost=>mean)
 by(df, :nudge_type, :payoff=>mean)

@@ -2,6 +2,8 @@
 # include("metrics.jl")
 
 KNOWN_WEIGHTS = false
+using Random: shuffle
+using SplitApplyCombine
 
 function metagreedy_optimal_clicks(b::Belief)
     v = voc1(b)
@@ -60,14 +62,17 @@ function reduce_cost(s::State, select, reduction)
     reduce_cost!(deepcopy(s), select, reduction)
 end
 
-function make_objective(s::State, reduction::Real; known_weights::Bool)
+function make_objective(s::State, reduction::Real; known_weights::Bool, return_sem::Bool=false)
     if known_weights
         objective1(select::BitVector) = expected_reward(reduce_cost(s, select, reduction))
     else
         states = map(1:1000) do i
             State(s.m; payoffs=s.payoffs, costs=s.costs)
         end
-        objective2(select::BitVector) = mean(expected_reward(reduce_cost(s1, select, reduction)) for s1 in states)
+        function objective2(select::BitVector)
+            rs = [expected_reward(reduce_cost(s1, select, reduction)) for s1 in states]
+            return_sem ? (mean(rs), sem(rs)) : mean(rs)
+        end
     end
 end
 
@@ -79,6 +84,7 @@ end
 #     greedy_select(make_objective(s, reduction), init, max_flips)
 # end
 function greedy_select(s::State, reduction::Real, n_reduce::Int; known_weights=KNOWN_WEIGHTS, verbose=false)
+    @assert reduction > 0
     x = BitVector(fill(false, length(s.payoffs)))
     objective = make_objective(s, reduction; known_weights)
     
@@ -100,7 +106,57 @@ function greedy_select(s::State, reduction::Real, n_reduce::Int; known_weights=K
     end
     return x
 end
-backwards_greedy(s::State) = greedy_select(s; init=true)
+
+function greedy_select_increase(s::State, reduction::Real, n_reduce::Int, base_cost::Real; 
+                                known_weights=KNOWN_WEIGHTS, verbose=false)
+    @assert reduction < 0
+    (x1, val1), (x2, val2) = map([true, false]) do init  # start with all or no costs increased
+        x = BitVector(fill(init, length(s.payoffs)))
+        objective = make_objective(s, reduction; known_weights, return_sem=true)
+        
+        if init
+            # these have to be off
+            x[(s.costs .!= base_cost)[:]] .= false
+        end
+
+        possible = filter(i->s.costs[i] == base_cost, 1:length(s.costs))
+        current_value = objective(x)[1]
+        seen = Set{BitVector}()
+        
+        function flip_value(i)
+            x[i] = !x[i]
+            fx = objective(x)
+            x[i] = !x[i]
+            return fx
+        end
+
+        function do_flip!(could_flip)
+            for i in shuffle(could_flip)
+                x[i] = !x[i]
+                x ∉ seen && return true
+                x[i] = !x[i]  # flip back
+            end
+            return false
+        end
+
+        for iter in 1:50
+            push!(seen, x)
+            vse = flip_value.(possible)  # how much does objective improve from adding/removing the extra cost at each cell
+            v, se = invert(vse)
+            maxv, maxi = findmax(v)
+            maxv - se[maxi] <= current_value && return x, current_value  # can't improve
+            could_flip = possible[findall(isequal(maxv), v)]
+
+            flipped = do_flip!(could_flip)
+            !flipped && return x, current_value
+            current_value = maxv
+            verbose && println("($iter)  $(sum(x))  $(round(current_value; digits=3))  ", x)
+        end
+        return x, current_value
+    end
+    # @info "done" val1 val2
+    val1 > val2 ? x1 : x2
+end
 
 # %% ==================== Heuristic strategies ====================
 
@@ -143,23 +199,22 @@ end
 extreme_select(s::State, args...) = extreme_select(s.m, s.payoffs, s.costs, args...)
 greedy_select(s::State, args...) = greedy_select(s.m, s.payoffs, s.costs, args...)
 
-function get_reductions(s; reduction=2, n_reduce=5)
-    selections = (
+
+function sample_cost_reduction_trial(;base_cost=2, reduction=2, n_reduce=5, n_rand_reduce=5)
+    # fix random_select
+    s = exp3_state(;base_cost, reduction, n_rand_reduce)
+    selections = reduction < 0 ? (
+        greedy = greedy_select_increase(s, reduction, base_cost),
+        none = BitVector(fill(false, length(s.costs))),
+    ) : (
         none = BitVector(fill(false, length(s.costs))),
         random = random_select(s.costs, reduction, n_reduce),
         extreme = extreme_select(s, reduction, n_reduce),
         greedy = greedy_select(s, reduction, n_reduce),
     )
-    map(selections) do sel
-        reduce_cost(s, sel, reduction)
+    alt_costs = map(selections) do sel
+        reduce_cost(s, sel, reduction).costs
     end
-end
-
-function sample_cost_reduction_trial(;base_cost=2, reduction=2, n_reduce=5, n_rand_reduce=5)
-    # fix random_select
-    s = exp3_state(;base_cost, reduction, n_rand_reduce)
-    alt_costs = map(x->x.costs, get_reductions(s; reduction, n_reduce))
     s, alt_costs
 end
-
 
