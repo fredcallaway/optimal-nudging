@@ -83,8 +83,9 @@ end
 #     init = BitVector(fill(init, length(s.costs)))
 #     greedy_select(make_objective(s, reduction), init, max_flips)
 # end
-function greedy_select(s::State, reduction::Real, n_reduce::Int; known_weights=KNOWN_WEIGHTS, verbose=false)
-    @assert reduction > 0
+function greedy_select(s::State, reduction::Real, n_reduce::Int, base_cost::Real;
+                       known_weights=KNOWN_WEIGHTS, verbose=false)
+    n_reduce == 0 && return greedy_select_no_limit(s, reduction, base_cost; known_weights, verbose)
     x = BitVector(fill(false, length(s.payoffs)))
     objective = make_objective(s, reduction; known_weights)
     
@@ -96,26 +97,30 @@ function greedy_select(s::State, reduction::Real, n_reduce::Int; known_weights=K
         return fx
     end
 
-    possible = reducible(s.costs, reduction)
+    current_value = objective(x)
+    possible = filter(i->s.costs[i] == base_cost, 1:length(s.costs))
 
     for i in 1:n_reduce
-        i = sample(possible, Weights(softmax(1e5 .* reduction_value.(possible))))
-        deleteat!(possible, findfirst(isequal(i), possible))
+        v = reduction_value.(possible)
+        maxv = maximum(v)
+        # maxv < current_value && return x  # don't make things worse
+        current_value = maxv
+        i = rand(possible[findall(isequal(maxv), v)])
+        setdiff!(possible, i)
         x[i] = 1
         verbose && println("($i) ", x)
     end
     return x
 end
 
-function greedy_select_increase(s::State, reduction::Real, n_reduce::Int, base_cost::Real; 
+function greedy_select_no_limit(s::State, reduction::Real, base_cost::Real; 
                                 known_weights=KNOWN_WEIGHTS, verbose=false)
-    @assert reduction < 0
-    (x1, val1), (x2, val2) = map([true, false]) do init  # start with all or no costs increased
+    (x1, val1), (x2, val2) = map([true, false]) do init  # start with all or no costs decreased
         x = BitVector(fill(init, length(s.payoffs)))
         objective = make_objective(s, reduction; known_weights, return_sem=true)
         
         if init
-            # these have to be off
+            # these can't be changed
             x[(s.costs .!= base_cost)[:]] .= false
         end
 
@@ -204,13 +209,13 @@ function sample_cost_reduction_trial(;base_cost=2, reduction=2, n_reduce=5, n_ra
     # fix random_select
     s = exp3_state(;base_cost, reduction, n_rand_reduce)
     selections = reduction < 0 ? (
-        greedy = greedy_select_increase(s, reduction, base_cost),
+        greedy = greedy_select(s, reduction, n_reduce, base_cost),
         none = BitVector(fill(false, length(s.costs))),
     ) : (
         none = BitVector(fill(false, length(s.costs))),
         random = random_select(s.costs, reduction, n_reduce),
         extreme = extreme_select(s, reduction, n_reduce),
-        greedy = greedy_select(s, reduction, n_reduce),
+        greedy = greedy_select(s, reduction, n_reduce, base_cost),
     )
     alt_costs = map(selections) do sel
         reduce_cost(s, sel, reduction).costs

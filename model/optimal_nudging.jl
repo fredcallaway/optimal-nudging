@@ -46,17 +46,38 @@ end
 # write_attention_trials(3, 2, 2)
 # simulate_attention(3, 2, 2)
 
-write_attention_trials(3, 3, 2)
-simulate_attention(3, 3, 2)
 # %% --------
-trials = write_attention_trials(3, 1, -2)
-n_reduce =3; base_cost = 1; reduction = -2
-trials = deserialize("tmp/attention_trials-$n_reduce-$base_cost-$reduction")
-df = simulate_attention(3, 1, -2)
+
+trials3 = write_attention_trials(3, 1, -2)
+df3 = simulate_attention(3, 1, -2)
+
+trials0 = write_attention_trials(0, 1, -2)
+df0 = simulate_attention(0, 1, -2)
+
 # %% --------
+# trials = deserialize("tmp/attention_trials-0-1--2")  
+map(trials3) do t
+    sum(t.all_costs.greedy .≠ 1) == 6
+end |> mean
+# %% --------
+map(trials3) do t
+# %% --------
+map([df0, df3]) do df
+    df = df3
+    df.net_payoff = df.payoff - df.decision_cost
+    x = by(df, :nudge_type, :decision_cost=>mean, :payoff=>mean, :net_payoff=>mean)
+    d1 = x.decision_cost_mean[1] - x.decision_cost_mean[2]
+    d2 = x.payoff_mean[1] - x.payoff_mean[2]
+    d1, d2, d2 - d1
+end
 
 
 # %% --------
 head(df)
-by(df, :nudge_type, :decision_cost=>mean)
-by(df, :nudge_type, :payoff=>mean)
+by(df0, :nudge_type, :decision_cost=>mean)
+by(df0, :nudge_type, :payoff=>mean)
+by(df3, :nudge_type, :decision_cost=>mean)
+by(df3, :nudge_type, :payoff=>mean)
+
+
+
