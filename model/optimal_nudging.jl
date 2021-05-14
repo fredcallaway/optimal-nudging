@@ -7,7 +7,7 @@ using CSV
 @everywhere include("nudging_base.jl")
 @everywhere include("optimal_nudging_base.jl")
 
-function write_attention_trials(n_reduce, base_cost, reduction; N=1000)
+function write_optimal_nudging_trials(n_reduce, base_cost, reduction; N=1000)
     trials = @showprogress pmap(1:N) do i
         s, alt_costs = sample_cost_reduction_trial(;n_reduce, n_rand_reduce=n_reduce, base_cost, reduction)
         (
@@ -18,15 +18,15 @@ function write_attention_trials(n_reduce, base_cost, reduction; N=1000)
         )
     end
 
-    write("results/attention_trials-$n_reduce-$base_cost-$reduction.json", json(trials))
-    serialize("tmp/attention_trials-$n_reduce-$base_cost-$reduction", trials)
+    write("results/optimal_nudging_trials-$n_reduce-$base_cost-$reduction.json", json(trials))
+    serialize("tmp/optimal_nudging_trials-$n_reduce-$base_cost-$reduction", trials)
     return trials
 end
 
 
 function simulate_attention(n_reduce, base_cost, reduction)
     m = exp3_state(;base_cost, reduction).m
-    trials = deserialize("tmp/attention_trials-$n_reduce-$base_cost-$reduction")
+    trials = deserialize("tmp/optimal_nudging_trials-$n_reduce-$base_cost-$reduction")
     results = @showprogress map(trials) do t
         mapreduce(vcat, 1:10) do i
             map(pairs(t.all_costs)) do nudge_type, costs
@@ -38,24 +38,22 @@ function simulate_attention(n_reduce, base_cost, reduction)
         end
     end
     df = reduce(vcat, results) |> DataFrame
-    df |> CSV.write("results/attention_sims-$n_reduce-$base_cost-$reduction.csv")
+    df |> CSV.write("results/optimal_nudging_sims-$n_reduce-$base_cost-$reduction.csv")
     df
 end
 
-
-# write_attention_trials(3, 2, 2)
+# write_optimal_nudging_trials(3, 2, 2)
 # simulate_attention(3, 2, 2)
 
 # %% --------
-
-trials3 = write_attention_trials(3, 1, -2)
+trials3 = write_optimal_nudging_trials(3, 1, -2)
 df3 = simulate_attention(3, 1, -2)
 
-trials0 = write_attention_trials(0, 1, -2)
+trials0 = write_optimal_nudging_trials(0, 1, -2)
 df0 = simulate_attention(0, 1, -2)
 
 # %% --------
-# trials = deserialize("tmp/attention_trials-0-1--2")  
+trials3 = deserialize("tmp/optimal_nudging_trials-3-1--2")  
 map(trials3) do t
     sum(t.all_costs.greedy .≠ 1) == 6
 end |> mean
