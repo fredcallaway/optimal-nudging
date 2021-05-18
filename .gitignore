@@ -6,3 +6,6 @@ model/scratch.jl
 analysis/old/
 model/bak/
 analysis/figs-dcpolicy/
+analysis/.fighist/
+analysis/tmpfigs/
+model/.fighist/
