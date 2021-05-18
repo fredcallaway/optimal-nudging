@@ -38,7 +38,11 @@ function mutate(x::T; kws...) where T
     return T([get(kws, fn, getfield(x, fn)) for fn in fieldnames(T)]...)
 end
 
-
+function monte_carlo(f, N=10000)
+    N \ mapreduce(+, 1:N) do i
+        f()
+    end
+end
 
 # import Serialization: serialize
 # function serialize(s::String, x)

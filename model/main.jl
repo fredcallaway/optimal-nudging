@@ -88,3 +88,59 @@ let
     Tdata::Vector{T} = data
     DataFrame(Tdata) |> CSV.write("results/supersize_sims.csv")
 end
+
+
+# %% ==================== Attention ====================
+@everywhere include("attention.jl")
+
+
+M = map(Iterators.product([5], [5], [3], 1:26, exp.(-2.:2))) do (n_option, n_feature, cost, weight_highlight, α)
+    m = MetaMDP(n_option, n_feature, REWARD_DIST, AttentionExperimentWeights(n_feature, 30, weight_highlight), cost)
+    (m, α)
+end |> collect;
+
+d = sample_attention_effect(M[end])
+attention_effects = sample_many(sample_attention_effect, M, 10000);
+
+data = mapmany(M, attention_effects) do (m, α), de
+    mapmany(de) do d
+        map(0:1, [d.without, d.with]) do nudge, x
+            (;mdp_features(m)...,
+             α,
+             nudge,
+             d.weight_dev,
+             d.weight_highlight,
+             x...)
+        end
+    end
+end;
+
+DataFrame(data) |> CSV.write("results/attention_sims.csv")
+
+
+
+# %% ==================== Attention - ALT ====================
+@everywhere include("attention.jl")
+
+M = map(Iterators.product([5], [5], [3], 1:26, exp.(-2.:2))) do (n_option, n_feature, cost, weight_highlight, α)
+    m = MetaMDP(n_option, n_feature, REWARD_DIST, AttentionExperimentWeights(n_feature, 30, weight_highlight), cost)
+    (m, α)
+end |> collect;
+
+d = sample_attention_effect(M[end])
+attention_effects = sample_many(sample_attention_effect, M, 10000);
+
+data = mapmany(M, attention_effects) do (m, α), de
+    mapmany(de) do d
+        map(0:1, [d.without, d.with]) do nudge, x
+            (;mdp_features(m)...,
+             α,
+             nudge,
+             d.weight_dev,
+             d.weight_highlight,
+             x...)
+        end
+    end
+end;
+
+DataFrame(data) |> CSV.write("results/attention_sims.csv")
