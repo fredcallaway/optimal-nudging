@@ -3,6 +3,10 @@ library(magrittr)
 library(stickylabeller)
 library(lemon)
 
+knitr::opts_chunk$set(
+    warning=FALSE, message=FALSE, fig.width=6, fig.height=4, fig.align="center"
+)
+
 options(
   "summ-model.info"=FALSE, 
   "summ-model.fit"=FALSE, 

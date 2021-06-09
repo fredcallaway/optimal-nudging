@@ -1,0 +1,101 @@
+---
+title: Stoplight (attentional nudge) pilot results
+date: "`r Sys.Date()`"
+author: "fredcallaway"
+output:
+  rmdformats::robobook:
+    code_folding: hide
+    self_contained: true
+---
+
+```{r setup, include=FALSE}
+source("base.r")
+
+h = read_csv('../data/pilot_data/traffic-light-pilot4.csv') %>%
+    filter(!is_practice) %>% 
+    transmute(
+        agent="human",
+        participant_id = participant_id,
+        n_option = num_options,
+        n_feature = num_features,
+        decision_cost = points_click_cost,
+        reveal_cost = original_item_cost,
+        weight_dev = weights_deviation,
+        decision_cost = click_cost,
+        payoff = points_action_utility,
+        n_click_highlight = num_highlight_reveals,
+        highlight_loss = highlight_value_check - max_highlight_value,
+        weight_highlight = highlight_weight,
+        highlight_value = highlight_value_check,
+        nudge = factor(!is_control, levels=c(F,T), labels=c("absent", "present"))
+    )
+
+
+m = read_csv('../model/results/attention_sims.csv') %>% 
+    filter(reveal_cost == 3) %>% 
+    mutate(
+        agent="model",
+        participant_id = -1,
+        nudge = factor(nudge, levels=c(0,1), labels=c("absent", "present")),
+        model = participant_id == "model"
+    )
+
+df = bind_rows(h, m)
+```
+
+```{r}
+plot_both = function(yvar) {
+    df %>% 
+        # group_by(agent) %>% 
+        # slice_sample(n=500) %>% 
+        ggplot(aes(weight_highlight, {{yvar}}, color=nudge, fill=nudge)) +
+        geom_smooth(alpha=0.2) +
+        stat_summary_bin(fun.data=mean_se, bins=5) +
+        facet_wrap(~agent) +
+        theme(
+            legend.position="top", 
+            axis.line = element_blank(),
+            panel.border = element_rect(colour = "black", fill = NA, size=1)
+        ) + scale_colour_manual(values=c(
+            "darkgray",
+            "dodgerblue"
+        ), aesthetics=c("fill", "colour"), name="Nudge")
+}
+
+n_participant = length(unique(h$participant_id))
+n_trial = df %>%
+    filter(agent == "human") %>%
+    with(table(participant_id)) %>% only
+```
+
+## Description
+
+We recruited `r n_participant` participants, each of which performed `r n_trial`
+trials (excluding two practice trials). On half of trials the cost to
+reveal each cell in one row (one feature) was reduced from 3 clicks to 1
+click. We call this the "highlighted feature". We also manipulate the weight of
+the highlighted feature: for each participant, we set the weights on the 14 nudge
+and 14 control trials to approximately uniformly tile the possible range (1 to 28).
+The remaining two weights on each trial were sampled uniformly so that the total weight was 30.
+
+## Number of clicks
+
+```{r}
+plot_both(n_click_highlight) + 
+  labs(x="Weight of Highlighted Feature", y="Number of Reveals\nfor Highlighted Feature")
+```
+ 
+## Value of highlighted feature
+
+```{r}
+plot_both(highlight_value) + 
+  labs(x="Weight of Highlighted Feature", y="Highlighted Feature Value\nof Chosen Option")
+```
+
+
+## Probability of maximizing
+
+```{r}
+plot_both(as.numeric(highlight_loss == 0)) + 
+  labs(x="Weight of Highlighted Feature", y="Probability of Maximizing\nHighlighted Feature")
+``` 
