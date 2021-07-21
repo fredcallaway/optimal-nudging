@@ -2,6 +2,7 @@ library(tidyverse)
 library(magrittr)
 library(stickylabeller)
 library(lemon)
+library(patchwork)
 
 knitr::opts_chunk$set(
     warning=FALSE, message=FALSE, fig.width=6, fig.height=4, fig.align="center"
@@ -26,7 +27,10 @@ YELLOW =  "#FFDD47"
 GRAY = "#ADADAD"
 BLACK = "#111111"
 
-theme_set(theme_classic(base_size = 14) + theme(strip.background = element_blank()))
+theme_set(theme_classic(base_size = 14) + theme(
+  strip.background = element_blank(),
+  strip.text.x = element_text(size=16),
+))
 update_geom_defaults("line", list(size = 1.2))
 
 kable = knitr::kable

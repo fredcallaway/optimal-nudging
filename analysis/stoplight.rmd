@@ -64,6 +64,25 @@ X = m %>%
 
 
 ```{r}
+df %>% 
+    pivot_longer(c(n_click_highlight, highlight_value), names_to="name", values_to="value", names_prefix="") %>% 
+    ggplot(aes(weight_highlight, value, color=nudge, fill=nudge)) +
+    geom_smooth(method="lm", alpha=0.2) +
+    stat_summary_bin(fun.data=mean_se, bins=5) +
+    facet_wrap(name~agent) +
+    theme(
+        legend.position="top", 
+        # axis.line = element_blank(),
+        # panel.border = element_rect(colour = "black", fill = NA, size=1)
+    ) + scale_colour_manual(values=c(
+        "darkgray",
+        "dodgerblue"
+    ), aesthetics=c("fill", "colour"), name="Nudge")
+```
+
+
+
+```{r}
 plot_both = function(yvar) {
     df %>% 
         # group_by(agent) %>% 
