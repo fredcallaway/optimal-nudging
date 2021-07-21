@@ -11,7 +11,7 @@ output:
 ```{r setup, include=FALSE}
 source("base.r")
 
-h = read_csv('../data/pilot_data/traffic-light-pilot4.csv') %>%
+h = read_csv('../data/final_experiments_data/stoplight_data.csv') %>%
     filter(!is_practice) %>% 
     transmute(
         agent="human",
@@ -23,14 +23,16 @@ h = read_csv('../data/pilot_data/traffic-light-pilot4.csv') %>%
         weight_dev = weights_deviation,
         decision_cost = click_cost,
         payoff = points_action_utility,
-        n_click_highlight = num_highlight_reveals,
-        highlight_loss = highlight_value_check - max_highlight_value,
+        n_click_highlight = highlight_num_reveals,
+        highlight_loss = highlight_value - max_highlight_value,
         weight_highlight = highlight_weight,
-        highlight_value = highlight_value_check,
+        highlight_value,
         nudge = factor(!is_control, levels=c(F,T), labels=c("absent", "present"))
     )
 
+```
 
+```{r}
 m = read_csv('../model/results/attention_sims.csv') %>% 
     filter(reveal_cost == 3) %>% 
     mutate(
@@ -42,6 +44,24 @@ m = read_csv('../model/results/attention_sims.csv') %>%
 
 df = bind_rows(h, m)
 ```
+
+```{r}
+X = m %>% 
+    select(nudge, weight_highlight, n_click_highlight, highlight_value, highlight_loss) %>% 
+    filter(rep(c(T, F, F, T), nrow(m) / 4)) %>% 
+    mutate(bin=weight_highlight %/% 2) %>% 
+    group_by(nudge, bin) %>% 
+    transmute(
+        participant_id=row_number(),
+        nudge,
+        highlight_weight=weight_highlight,
+        num_highlight_reveals=n_click_highlight,
+        highlight_value_check=highlight_value,
+        max_highlight_value=as.numeric(highlight_loss == 0),
+    )
+
+```
+
 
 ```{r}
 plot_both = function(yvar) {

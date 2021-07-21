@@ -1,28 +1,45 @@
 #!/usr/bin/env bash
 filename="${1%.*}"
-R -e "rmarkdown::render('$filename.rmd', encoding = 'UTF-8')"
-if [ $? -ne 0 ]; then
-   echo "Error compiling $filename.rmd"
-   exit
+project='nudging'
+
+if [ ! -d "reports" ]; then
+    echo Settinp up directories
+    mkdir -p reports
+    ssh fredc@simcoe "mkdir -p ~/www.fredcallaway.com/docs/reports/$project"
+fi
+
+if [[ $* == *--nocompile* ]]; then
+    echo Skipping compilation
+else
+    echo Compiling document
+    R -e "rmarkdown::render('$filename.rmd', encoding = 'UTF-8')"
+    if [ $? -ne 0 ]; then
+       echo "Error compiling $filename.rmd"
+       exit 1
+    fi
 fi
 
 open -a 'Google Chrome' "$filename.html"
 echo -n "Confirm publish [y/n]"
 read confirm
 if [ $confirm == "y" ]; then
-    echo good to go
+    echo Good to go!
 else
-    echo canceling publish
+    echo Canceling publish
     exit 1
 fi
-
 newname=$filename-`date +"%y-%m-%d"`.html
 newpath=reports/$newname
 mv "$filename.html" $newpath
-git add .
-git commit -m "$newpath"
 
-scp $newpath fredc@simcoe:~/www.fredcallaway.com/docs/reports/nudging
+if [[ $* == *--nocommit* ]]; then
+    echo Skipping compilation
+else
+    echo Commiting changes
+    git add .
+    git commit -m "$newpath"
+fi
 
-echo www.fredcallaway.com/reports/nudging/$newname | pbcopy
-echo www.fredcallaway.com/reports/nudging/$newname
+scp $newpath fredc@simcoe:~/www.fredcallaway.com/docs/reports/$project
+echo www.fredcallaway.com/reports/$project/$newname | pbcopy
+echo www.fredcallaway.com/reports/$project/$newname
