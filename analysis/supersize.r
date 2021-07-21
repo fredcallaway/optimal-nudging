@@ -34,10 +34,27 @@ model = model_raw %>%
 
 # %% --------
 df = bind_rows(human, model) %>% mutate(
-    model = participant_id == "model"
+    model = if_else(participant_id == "model", "Model", "Human"),
+    n_option = as.factor(n_option),
+    n_feature = as.factor(n_feature)
 )
 
 # %% --------
+
+df %>% 
+    ggplot(aes(nudge, chose_nudge, color=n_feature, group=n_feature)) +
+    facet_wrap(~model) + 
+    stat_summary(fun.data=mean_se, size=.2) +
+    stat_summary(fun.data=mean_se, geom="line") +
+    scale_colour_manual(values=c(
+        "gray", "red2"
+    ), aesthetics=c("fill", "colour"), name="Features") +
+    coord_cartesian(xlim=c(NULL), ylim=c(0, 0.5))
+
+fig(w=7, h=3)
+
+# %% --------
+
 facets = facet_rep_wrap(~n_feature, 
     labeller = label_glue("{n_feature} Features")
 )
@@ -62,4 +79,4 @@ ggplot(df, aes(nudge, chose_nudge, color=model, group=model, linetype=model)) +
         panel.border = element_blank()
     )
 
-ggsave("tmpfigs/super-lines.png", dpi=320, width=4, height=2.2)
+fig("supersize", w=4, h=2.2)
