@@ -9,6 +9,14 @@ function Base.rand(d::AttentionExperimentWeights)
     [d.weight1; rest]
 end
 
+struct FixedWeights <: Distribution{Multivariate,Discrete}
+    weights::Vector{Int}
+end
+
+function Base.rand(d::FixedWeights)
+    return copy(d.weights)
+end
+
 function apply_highlighting!(s::State, feature::Int)
     s.costs[feature, :] .-= 2
     s
@@ -29,13 +37,11 @@ function simulate_attention(pol, s, feature)
     )
 end
 
-function sample_attention_effect((m, α))
+function sample_attention_effect((m, α); rand_feature=false)
     pol = MetaGreedy(m, α)
     s = experiment_state(m)
-    feature = 1
-    # feature = rand(1:m.n_feature)
+    feature = rand_feature ? rand(1:m.n_feature) : 1
     s_highlight = apply_highlighting!(deepcopy(s), feature)
-    # b = Belief(s)
     (weight_dev = sum(abs.(s.weights .- mean(s.weights))),
      weight_highlight = s.weights[feature],
      with = simulate_attention(pol, s_highlight, feature),

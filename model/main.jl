@@ -94,13 +94,13 @@ end
 @everywhere include("attention.jl")
 
 
-M = map(Iterators.product([5], [5], [3], 1:26, exp.(-2.:2))) do (n_option, n_feature, cost, weight_highlight, α)
+M = map(Iterators.product([5], [3], [3], 1:28, [1.])) do (n_option, n_feature, cost, weight_highlight, α)
     m = MetaMDP(n_option, n_feature, REWARD_DIST, AttentionExperimentWeights(n_feature, 30, weight_highlight), cost)
     (m, α)
 end |> collect;
 
 d = sample_attention_effect(M[end])
-attention_effects = sample_many(sample_attention_effect, M, 10000);
+attention_effects = sample_many(sample_attention_effect, M, 5000);
 
 data = mapmany(M, attention_effects) do (m, α), de
     mapmany(de) do d
@@ -122,13 +122,15 @@ DataFrame(data) |> CSV.write("results/attention_sims.csv")
 # %% ==================== Attention - ALT ====================
 @everywhere include("attention.jl")
 
-M = map(Iterators.product([5], [5], [3], 1:26, exp.(-2.:2))) do (n_option, n_feature, cost, weight_highlight, α)
-    m = MetaMDP(n_option, n_feature, REWARD_DIST, AttentionExperimentWeights(n_feature, 30, weight_highlight), cost)
+M = map(Iterators.product([5], [3], [3], [1.])) do (n_option, n_feature, cost, α)
+    m = MetaMDP(n_option, n_feature, REWARD_DIST, FixedWeights([2, 8, 20]), cost)
     (m, α)
 end |> collect;
 
 d = sample_attention_effect(M[end])
-attention_effects = sample_many(sample_attention_effect, M, 10000);
+attention_effects = sample_many(M, 10000) do x
+    sample_attention_effect(x; rand_feature=true)
+end
 
 data = mapmany(M, attention_effects) do (m, α), de
     mapmany(de) do d
@@ -143,4 +145,4 @@ data = mapmany(M, attention_effects) do (m, α), de
     end
 end;
 
-DataFrame(data) |> CSV.write("results/attention_sims.csv")
+DataFrame(data) |> CSV.write("results/attention_sims_alt2.csv")
