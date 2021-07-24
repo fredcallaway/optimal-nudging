@@ -1,8 +1,11 @@
-library(tidyverse)
-library(magrittr)
-library(stickylabeller)
-library(lemon)
-library(patchwork)
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(magrittr)
+  library(stickylabeller)
+  library(lemon)
+  library(patchwork)
+  library(jsonlite)
+})
 
 knitr::opts_chunk$set(
     warning=FALSE, message=FALSE, fig.width=6, fig.height=4, fig.align="center"
@@ -29,9 +32,18 @@ BLACK = "#111111"
 
 theme_set(theme_classic(base_size = 14) + theme(
   strip.background = element_blank(),
-  strip.text.x = element_text(size=16),
+  strip.text.x = element_text(size=14),
 ))
 update_geom_defaults("line", list(size = 1.2))
+
+feature_colors = scale_colour_manual(values=c(
+  "2"="darkgray", "5"="#E65E68"
+), aesthetics=c("fill", "colour"), name="Features")
+
+nudge_colors = scale_colour_manual(values=c(
+    "darkgray",
+    "dodgerblue"
+), aesthetics=c("fill", "colour"), name="Nudge")
 
 kable = knitr::kable
 glue = glue::glue
@@ -45,6 +57,9 @@ fig = function(name="tmp", w=4, h=4, dpi=320, ...) {
     system(glue('mkdir -p `dirname {name}`'))
     system(glue('mv /tmp/fig.png {p}'))
     system(glue('cp {p} figs/"{name}".png'))
+    if(name != "tmp") {
+      ggsave(glue("figs/{name}.pdf"), width=w, height=h, dpi=dpi, ...)
+    }
     # invisible(dev.off())
     # knitr::include_graphics(p)
 }
@@ -79,6 +94,30 @@ only = function(xs) {
   u = unique(xs)
   stopifnot(length(u) == 1)
   u[1]
+}
+
+# %% ==================== Exclusions ====================
+
+args = commandArgs(trailingOnly=TRUE)
+EXCLUDE = (length(args) > 0 & args[1] == "--exclude") 
+
+apply_exclusion = function(data, is_control, rate=0.5) {
+  if (!EXCLUDE) return(data)
+  keep = data %>%
+      filter({{is_control}}) %>% 
+      group_by(participant_id) %>% 
+      summarise(no_click_rate = mean(num_values_revealed == 0)) %>%
+      filter(no_click_rate < rate) %>% 
+      with(participant_id)
+  n_total = length(unique(data$participant_id))
+  n_exclude = n_total - length(keep)
+  print(glue("Excluding {n_exclude}/{n_total} participants who didn't click on {100*rate}% of control trials"))
+  filter(data, participant_id %in% keep)
+}
+
+savefig = function(name, w, h) {
+  fn = paste0(name, if(EXCLUDE) "-exclude" else "")
+  fig(fn, w, h)
 }
 
 # %% ==================== Plot utils ====================

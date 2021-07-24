@@ -1,10 +1,20 @@
+args = commandArgs(trailingOnly=TRUE)
+EXCLUDE = (length(args) > 0 & args[1] == "--exclude") 
 source("base.r")
 
-h = read_csv('../data/final_experiments_data/stoplight_data.csv') %>%
+# %% ==================== Load data ====================
+
+human_raw = read_csv('../data/final_experiments_data/stoplight_data.csv', col_types = cols())
+model_raw = read_csv('../model/results/attention_sims.csv', col_types = cols())
+
+# %% --------
+
+human = human_raw %>%
     filter(!is_practice) %>% 
     transmute(
-        model="Human",
-        participant_id = participant_id,
+        highlight_value, 
+        num_values_revealed,
+        participant_id = as.character(participant_id),
         n_option = num_options,
         n_feature = num_features,
         decision_cost = points_click_cost,
@@ -15,21 +25,21 @@ h = read_csv('../data/final_experiments_data/stoplight_data.csv') %>%
         n_click_highlight = highlight_num_reveals,
         highlight_loss = highlight_value - max_highlight_value,
         weight_highlight = highlight_weight,
-        highlight_value,
-        nudge = factor(!is_control, levels=c(F,T), labels=c("absent", "present"))
-    )
+        nudge = factor(!is_control, levels=c(F,T), labels=c("Absent", "Present"))
+    ) %>% apply_exclusion(nudge == "Absent")
 
-m = read_csv('../model/results/attention_sims.csv') %>% 
+model = model_raw %>% 
     filter(reveal_cost == 3) %>% 
     mutate(
-        model="Model",
-        participant_id = -1,
-        nudge = factor(nudge, levels=c(0,1), labels=c("absent", "present")),
+        participant_id="model",
+        nudge = factor(nudge, levels=c(0,1), labels=c("Absent", "Present")),
     )
 
-df = bind_rows(h, m)
+df = bind_rows(human, model) %>% mutate(
+    model = factor(if_else(participant_id == "model", "Model", "Human"), levels=c("Model", "Human")),
+)
 
-# %% --------
+# %% ==================== Plot ====================
 
 plot_both = function(yvar) {
     df %>% 
@@ -43,10 +53,7 @@ plot_both = function(yvar) {
             # legend.position="top", 
             # axis.line = element_blank(),
             # panel.border = element_rect(colour = "black", fill = NA, size=1)
-        ) + scale_colour_manual(values=c(
-            "darkgray",
-            "dodgerblue"
-        ), aesthetics=c("fill", "colour"), name="Nudge")
+        ) + nudge_colors
 }
 
 p1 = plot_both(n_click_highlight) + 
@@ -58,10 +65,15 @@ p2 = plot_both(highlight_value) +
 # + labs(x="", y="Number of Reveals\nfor Highlighted Feature")
 # + labs(x="Weight of Highlighted Feature", y="Highlighted Feature Value\nof Chosen Option")
 
-
-
 (p1 / p2) + plot_layout(guides = "collect")
-fig("stoplight", 7, 6)
+
+savefig("stoplight", 7, 6)
+
+# %% ==================== Explore ====================
+quit()  # don't run below in script
+# %% --------
+
+
 
 
 
