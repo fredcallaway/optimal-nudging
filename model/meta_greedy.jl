@@ -2,7 +2,7 @@ struct MetaGreedy <: Policy
     m::MetaMDP
     α::Float64
 end
-MetaGreedy(m::MetaMDP) = MetaGreedy(m, Inf)
+MetaGreedy(m::MetaMDP) = MetaGreedy(m, 1e5)
 (pol::MetaGreedy)(b::Belief) = act(pol, b)
 
 "Highest value in x not including x[c]"
@@ -46,6 +46,6 @@ end
 voc(pol::MetaGreedy, b::Belief) = voc1(b)
 
 function (pol::MetaGreedy)(b::Belief)
-    v, c = findmax(voc1(b))
-    v > 0 ? c : ⊥
+    i = sample(Weights(softmax(pol.α .* [0; voc1(b)])))
+    i - 1
 end

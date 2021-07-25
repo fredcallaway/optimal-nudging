@@ -3,6 +3,10 @@ fighist/
 analysis/figs/
 model/scratch.jl
 .DS_Store
+*.icloud
 analysis/old/
 model/bak/
 analysis/figs-dcpolicy/
+analysis/.fighist/
+analysis/tmpfigs/
+model/.fighist/
