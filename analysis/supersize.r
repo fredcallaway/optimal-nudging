@@ -2,7 +2,7 @@ source("base.r")
 
 # %% ==================== Load data ====================
 
-human_raw = read_csv('../data/final_experiments_data/supersize_data.csv', col_types = cols())
+human_raw = read_csv('../data/final_experiments_data/supersize.csv', col_types = cols())
 model_raw = read_csv('../model/results/supersize_sims.csv', col_types = cols())
 
 # %% --------
@@ -46,8 +46,8 @@ df = bind_rows(human, model) %>% mutate(
 df %>% 
     ggplot(aes(nudge, chose_nudge, color=n_feature, group=n_feature)) +
     facet_rep_grid(~model) + 
-    stat_summary(fun.data=mean_se, size=.2) +
     stat_summary(fun.data=mean_se, geom="line") +
+    point_and_error +
     feature_colors +
     coord_cartesian(xlim=c(NULL), ylim=c(0, 0.5)) + 
     labs(x="Suggestion Time", y="Prob Choose Suggestion")

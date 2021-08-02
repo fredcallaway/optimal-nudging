@@ -107,7 +107,7 @@ apply_exclusion = function(data, is_control, rate=0.5) {
       filter({{is_control}}) %>% 
       group_by(participant_id) %>% 
       summarise(no_click_rate = mean(num_values_revealed == 0)) %>%
-      filter(no_click_rate < rate) %>% 
+      filter(no_click_rate <= rate) %>% 
       with(participant_id)
   n_total = length(unique(data$participant_id))
   n_exclude = n_total - length(keep)
@@ -115,12 +115,18 @@ apply_exclusion = function(data, is_control, rate=0.5) {
   filter(data, participant_id %in% keep)
 }
 
+
+# %% ==================== Plot utils ====================
+
 savefig = function(name, w, h) {
   fn = paste0(name, if(EXCLUDE) "-exclude" else "")
   fig(fn, w, h)
 }
 
-# %% ==================== Plot utils ====================
+point_and_error = list(
+    stat_summary(fun.data=mean_cl_boot, geom="errorbar", width=.1, size=.3),
+    stat_summary(fun=mean, geom="point", size=1)
+)
 
 option_feature_grid = facet_grid(n_option ~ n_feature, 
     labeller = label_glue(

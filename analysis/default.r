@@ -1,8 +1,8 @@
 source("base.r")
-
 # %% ==================== Load data ====================
+# EXCLUDE = TRUE
 
-human_raw = read_csv('../data/final_experiments_data/default_data.csv', col_types = cols())
+human_raw = read_csv('../data/final_experiments_data/default.csv', col_types = cols())
 model_raw = read_csv('../model/results/default_sims.csv', col_types = cols())
 
 # %% --------
@@ -17,17 +17,22 @@ human = human_raw %>%
         reveal_cost = cost,
         nudge = trial_nudge == 'default',
         weight_dev = weights_deviation,
+        weights = map(weights, fromJSON),
         decision_cost = click_cost,
-        payoff = gross_earnings,        
+        payoff = gross_earnings * 3000,
+        total_points = net_earnings * 3000,
         chose_nudge = as.integer(chose_nudge),
     ) %>% apply_exclusion(!nudge)
 
+
+model_raw
 model = model_raw %>% 
     filter(reveal_cost == only(unique(human$reveal_cost))) %>% 
     select(-n_click_default) %>% 
     mutate(
         participant_id = "model",
-        chose_nudge = choose_default
+        chose_nudge = choose_default,
+        total_points = payoff - decision_cost
     )
 
 df = bind_rows(human, model) %>% mutate(
@@ -42,17 +47,115 @@ df = bind_rows(human, model) %>% mutate(
 
 df %>% 
     ggplot(aes(nudge, chose_nudge, color=n_feature, group=cond)) +
-        stat_summary(fun.data=mean_se, geom="pointrange", size=.2) +
         stat_summary(aes(linetype=n_option), fun=mean, geom="line") +
-        facet_rep_grid(~model) + 
+        point_and_error + 
         feature_colors +
+        facet_rep_grid(~model) + 
         scale_linetype_manual(values=c("dotted", "solid")) +
         labs(linetype="Options", x='Nudge', y='Prob Choose Default')
 
 savefig("default", 7, 3)
 
+
 # %% ==================== Explore ====================
 quit()  # don't run below in script
+# %% --------
+
+
+df %>%
+    ggplot(aes(weight_dev, payoff, color=nudge, fill=nudge)) + 
+    geom_smooth(alpha=0.2) +
+    nudge_colors +
+    facet_rep_wrap(~model) +
+    stat_summary_bin(fun.data=mean_se, bins=5)
+
+fig("tmp", 7, 3)
+
+# %% --------
+df %>%
+    mutate(high_dev = weight_dev > median(df$weight_dev)) %>% 
+    ggplot(aes(nudge, payoff, color=high_dev, group=interaction(n_option, n_feature, high_dev))) + 
+    stat_summary(aes(linetype=n_option), fun=mean, geom="line") +
+    point_and_error + 
+    # nudge_colors +
+    # facet_rep_wrap(~model)
+    facet_rep_grid(interaction(n_feature, n_option) ~ model, scales="free_y")
+
+
+fig("tmp", 7, 7)
+# %% --------
+df %>%
+    mutate(high_dev = weight_dev > median(df$weight_dev)) %>% 
+    ggplot(aes(nudge, payoff, color=high_dev, group=high_dev)) + 
+    stat_summary(fun=mean, geom="line") +
+    point_and_error + 
+    # nudge_colors +
+    # facet_rep_wrap(~model)
+    facet_rep_grid(interaction(n_feature, n_option) ~ model, scales="free_y")
+
+
+fig("tmp", 7, 7)
+
+# %% --------
+df %>% 
+    mutate(high_dev = 
+        factor(if_else(weight_dev > median(df$weight_dev), "Idiosyncratic", "Typical"))
+    ) %>% 
+    group_by(model, n_option, n_feature, high_dev, participant_id, nudge) %>% 
+    summarise(val=mean(total_points)) %>% 
+    pivot_wider(names_from=nudge, values_from=val) %>% 
+    transmute(benefit = Present - Absent) %>% 
+    ggplot(aes(high_dev, benefit, color=n_feature, group=interaction(n_option,n_feature))) +
+        geom_hline(yintercept=0) +
+        stat_summary(aes(linetype=n_option), fun=mean, geom="line") +
+        point_and_error + 
+        feature_colors +
+        facet_rep_grid(~model) + 
+        scale_linetype_manual(values=c("dotted", "solid")) +
+        labs(x="Preference Type", y="Effect of Nudge on Earnings")
+
+fig("tmp", 7, 3)
+
+# %% --------
+df %>% 
+    mutate(high_dev = 
+        factor(if_else(weight_dev > median(df$weight_dev), "Idiosyncratic", "Typical"))
+    ) %>% 
+    group_by(model, high_dev, participant_id, nudge) %>% 
+    summarise(val=mean(total_points)) %>% 
+    pivot_wider(names_from=nudge, values_from=val) %>% 
+    transmute(benefit = Present - Absent) %>% 
+    ggplot(aes(high_dev, benefit, group=1)) +
+        stat_summary(fun=mean, geom="line") +
+        point_and_error + 
+        feature_colors +
+        coord_cartesian(xlim=c(NULL), ylim=c(0, NA)) +
+        facet_rep_grid(~model) + 
+        scale_linetype_manual(values=c("dotted", "solid")) +
+        labs(x="Preference Type", y="Effect of Nudge on Earnings")
+
+fig("tmp", 7, 3)
+
+# %% --------
+
+df %>% 
+    ggplot(aes(weight_dev, y=..prop..)) + 
+    geom_bar()+
+    facet_rep_grid(interaction(n_feature, n_option) ~ model, scales="free_y")
+fig("tmp", 7, 7)
+
+
+# %% --------
+df %>% 
+    ggplot(aes(n_feature, chose_nudge, color=nudge, group=interaction(nudge,n_option))) +
+        stat_summary(aes(linetype=n_option), fun=mean, geom="line") +
+        point_and_error + 
+        nudge_colors +
+        facet_rep_grid(~model) + 
+        scale_linetype_manual(values=c("dotted", "solid"))
+
+savefig("tmp", 7, 3)
+
 # %% --------
 
 human %>% 

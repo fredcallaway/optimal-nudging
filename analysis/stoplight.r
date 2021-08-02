@@ -1,14 +1,11 @@
-args = commandArgs(trailingOnly=TRUE)
-EXCLUDE = (length(args) > 0 & args[1] == "--exclude") 
 source("base.r")
 
 # %% ==================== Load data ====================
 
-human_raw = read_csv('../data/final_experiments_data/stoplight_data.csv', col_types = cols())
+human_raw = read_csv('../data/final_experiments_data/traffic_light.csv', col_types = cols())
 model_raw = read_csv('../model/results/attention_sims.csv', col_types = cols())
 
 # %% --------
-
 human = human_raw %>%
     filter(!is_practice) %>% 
     transmute(
@@ -23,7 +20,7 @@ human = human_raw %>%
         decision_cost = click_cost,
         payoff = points_action_utility,
         n_click_highlight = highlight_num_reveals,
-        highlight_loss = highlight_value - max_highlight_value,
+        # highlight_loss = highlight_value - max_highlight_value,
         weight_highlight = highlight_weight,
         nudge = factor(!is_control, levels=c(F,T), labels=c("Absent", "Present"))
     ) %>% apply_exclusion(nudge == "Absent")
