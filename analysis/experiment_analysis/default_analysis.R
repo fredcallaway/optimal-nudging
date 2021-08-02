@@ -7,7 +7,7 @@ experiment_data$is_practice = experiment_data$is_practice == "True"
 experiment_data$many_options = experiment_data$og_baskets == 5
 experiment_data$many_features = experiment_data$num_features == 5
 experiment_data$revealed_no_values = experiment_data$uncovered_values == '[]'
-experiment_data$points_metalevel_reward = experiment_data$net_earnings * 2000
+experiment_data$points_metalevel_reward = experiment_data$net_earnings * 3000
 experiment_data$chose_nudge = experiment_data$chose_nudge == "True"
 
 # Get test data for analysis
@@ -46,3 +46,11 @@ revealed_values = subset(experiment_test,revealed_no_values==F)
 print(data.frame(revealed_values %>% group_by(trial_nudge) %>% summarize(mean_revealed_nudge = mean(chose_nudge))))
 model_4 = glm(chose_nudge ~ trial_nudge, data=revealed_values,family='binomial')
 summary(model_4)
+
+
+unrestricted_model = lm(points_metalevel_reward ~ many_options + many_features+weights_deviation,data=experiment_test)
+restricted_model = lm(points_metalevel_reward ~many_options+many_features,data=experiment_test)
+anova(unrestricted_model,restricted_model)
+summary(unrestricted_model)
+
+
