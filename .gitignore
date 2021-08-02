@@ -10,3 +10,7 @@ analysis/figs-dcpolicy/
 analysis/.fighist/
 analysis/tmpfigs/
 model/.fighist/
+analysis/alt_styles.r
+analysis/figs.bak/
+analysis/results.bak/
+model/results/.trash/
