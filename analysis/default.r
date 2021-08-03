@@ -71,7 +71,7 @@ human2 %>%
     group_by(nudge) %>% 
     summarise(prop=100*mean(chose_nudge)) %>% 
     rowwise() %>% group_walk(~ with(.x, 
-        write_tex("{path}/choice_percentage/nudge{nudge}.tex", "{prop:.1}")
+        write_tex("{path}/choice_percentage/nudge{nudge}", "{prop:.1}")
     ))
 
 # H2: The relative probability of selecting the default will be higher wheen there are many options
@@ -88,7 +88,7 @@ human2 %>%
     group_by(nudge) %>% 
     summarise(total=mean(total_points)) %>% 
     rowwise() %>% group_walk(~ with(.x, 
-        write_tex("{path}/metalevel_return_amounts/nudge{nudge}.tex", "{total:.2}")
+        write_tex("{path}/metalevel_return_amounts/nudge{nudge}", "{total:.2}")
     ))
 
 # H6: Trials with higher weight deviation will benefit have less benefit from default nudges
@@ -106,7 +106,7 @@ human2 %>%
     group_by(nudge) %>% 
     summarise(prop=100*mean(chose_nudge)) %>% 
     rowwise() %>% group_walk(~ with(.x, 
-        write_tex(glue("{path}/choice_percentage_revealed/nudge{nudge}.tex"), "{prop:.2}")
+        write_tex(glue("{path}/choice_percentage_revealed/nudge{nudge}"), "{prop:.2}")
     ))
 
 
