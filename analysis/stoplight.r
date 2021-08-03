@@ -1,8 +1,9 @@
 source("base.r")
+path = paste0("stats/stoplight", if (EXCLUDE) "-exclude" else "")
 
 # %% ==================== Load data ====================
 
-human_raw = read_csv('../data/final_experiments_data/traffic_light.csv', col_types = cols())
+human_raw = read_csv('../data/final_experiments_data/traffic_light_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/attention_sims.csv', col_types = cols())
 
 # %% --------
@@ -11,6 +12,7 @@ human = human_raw %>%
     transmute(
         highlight_value, 
         num_values_revealed,
+        maximized_highlighted_option,
         participant_id = as.character(participant_id),
         n_option = num_options,
         n_feature = num_features,
@@ -65,6 +67,46 @@ p2 = plot_both(highlight_value) +
 (p1 / p2) + plot_layout(guides = "collect")
 
 savefig("stoplight", 7, 6)
+
+# %% ==================== Stats ====================
+
+human2 = mutate(human,
+    nudge = as.integer(nudge == "Present")
+)
+
+# H1: Revealed values higher 
+t.test(n_click_highlight ~ nudge, data = human2, alternative='less') %>% 
+    tidy %>% 
+    with({
+        write_tex("{path}/num_reveal/nudge0", "{estimate1:.2}")
+        write_tex("{path}/num_reveal/nudge1", "{estimate2:.2}")
+        write_tex("{path}/num_reveal/ttest", 
+            "$t({parameter:.1}) = {-statistic:.2},\ {pval(p.value)}$"
+        )
+    })
+
+# H2: Highlight value
+t.test(highlight_value ~ nudge, data=human2, alternative='less') %>% 
+    tidy %>% 
+    with({
+        write_tex("{path}/value/nudge0", "{estimate1:.2}")
+        write_tex("{path}/value/nudge1", "{estimate2:.2}")
+        write_tex("{path}/value/ttest", 
+            "$t({parameter:.1}) = {-statistic:.2},\ {pval(p.value)}$"
+        )
+    })
+
+# H3: Probability of maximizing the highlighted_option
+human2 %>% 
+    group_by(nudge) %>% 
+    summarise(n=n(), n_max=sum(maximized_highlighted_option)) %>% 
+    with(prop.test(n_max, n, alternative='less', correct=FALSE)) %>% 
+    tidy %>% 
+    with({
+        write_tex("{path}/maximize/nudge0", "{100*estimate1:.1}")
+        write_tex("{path}/maximize/nudge1", "{100*estimate2:.1}")
+        write_tex("{path}/maximize/proptest", "$\\chi^2({parameter}) = {round(statistic)},\\ {pval(p.value)}$")
+    })
 
 # %% ==================== Explore ====================
 quit()  # don't run below in script

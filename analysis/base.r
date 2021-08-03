@@ -105,6 +105,9 @@ tex_writer = function(path) {
 }
 
 write_tex = function(file, tex) {
+  if (!endsWith(file, ".tex")) {
+    file = paste0(file, ".tex")
+  }
   file = glue(file, .envir=parent.frame())
   file = str_replace(file, "[:*]", "-")
   dir.create(dirname(file), recursive=TRUE, showWarnings=FALSE)
@@ -128,12 +131,13 @@ write_model.glm = function(model, path) {
 }
 
 write_model.lm = function(model, path) {
+    path = glue(path, .envir=parent.frame())
     tidy(model) %>% 
         filter(term != "(Intercept)") %>% 
         mutate(p.value = if (ONE_TAILED) p.value / 2 else p.value) %>% 
         rowwise() %>% group_walk(~ with(.x, 
-            write_tex(glue("{path}/{term}.tex"),
-                      fmt("$t({model$df})={statistic:.2},\\ {pval(p.value)}$"))
+            write_tex("{path}/{term}.tex",
+                      "$t({model$df})={statistic:.2},\\ {pval(p.value)}$")
         ))
 }
 

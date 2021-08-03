@@ -1,8 +1,8 @@
 source("base.r")
-
+path = paste0("stats/supersize", if (EXCLUDE) "-exclude" else "")
 # %% ==================== Load data ====================
 
-human_raw = read_csv('../data/final_experiments_data/supersize.csv', col_types = cols())
+human_raw = read_csv('../data/final_experiments_data/supersize_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/supersize_sims.csv', col_types = cols())
 
 # %% --------
@@ -53,3 +53,32 @@ df %>%
     labs(x="Suggestion Time", y="Prob Choose Suggestion")
 
 savefig("supersize", 7, 3)
+
+# %% ==================== Stats ====================
+
+nudge_test = human %>% 
+    filter(nudge != "Absent") %>% 
+    mutate(
+        many_options = as.integer(n_option == 5),
+        many_features = as.integer(n_feature == 5),
+        after = as.integer(nudge == "Late"),
+    )
+# H1: Probability of accepting the nudge greater than chance
+nudge_test %>% 
+    with(prop.test(sum(chose_nudge), n=length(chose_nudge), 
+         p=1/6, correct=FALSE, alternative='greater')) %>% 
+    tidy %>% 
+    with(write_tex("{path}/proptest", 
+        "proportion: {estimate:.2}, $\\chi^2({parameter}) = {round(statistic)},\\ {pval(p.value)}$"))
+
+
+# H2: Participants will choose the nudge more when there are many features
+# H3: Participants will accept the nudge more when the suggestion is given early
+glm(chose_nudge ~ many_features+after, data=nudge_test, family='binomial') %>% 
+    write_model("{path}/choice_simple")
+
+# H4: The effect of many features on probability of accepting the nudge will be higher for early suggestions
+# IE, the difference between chose nudge when many features == T between after T/F is larger than the difference
+# between chose nudge when many features == T between after 
+glm(chose_nudge ~ many_features*after,data=nudge_test, family='binomial') %>% 
+    write_model("{path}/choice_interaction")
