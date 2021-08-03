@@ -3,6 +3,7 @@ all: figs
 
 update:
 	rsync -av figs/ --exclude *.png ~/Papers/nudging-topics/figs/
+	rsync -av stats/ ~/Papers/nudging-topics/stats/
 
 clean:
 	-rm figs/*

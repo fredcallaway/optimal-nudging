@@ -1,8 +1,9 @@
 source("base.r")
-# %% ==================== Load data ====================
-# EXCLUDE = TRUE
+path = paste0("stats/default", if (EXCLUDE) "-exclude" else "")
 
-human_raw = read_csv('../data/final_experiments_data/default.csv', col_types = cols())
+# %% ==================== Load data ====================
+
+human_raw = read_csv('../data/final_experiments_data/default_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/default_sims.csv', col_types = cols())
 
 # %% --------
@@ -25,7 +26,6 @@ human = human_raw %>%
     ) %>% apply_exclusion(!nudge)
 
 
-model_raw
 model = model_raw %>% 
     filter(reveal_cost == only(unique(human$reveal_cost))) %>% 
     select(-n_click_default) %>% 
@@ -55,6 +55,59 @@ df %>%
         labs(linetype="Options", x='Nudge', y='Prob Choose Default')
 
 savefig("default", 7, 3)
+
+# %% ==================== Stats ====================
+
+human2 = human %>% mutate(
+    nudge = as.integer(nudge),
+    many_options = as.integer(n_option == 5),
+    many_features = as.integer(n_feature == 5),
+)
+# H1: Relative probability of selecting the default is positive
+glm(chose_nudge ~ nudge, data = human2, family='binomial') %>% 
+    write_model("{path}/choice_simple")
+
+human2 %>% 
+    group_by(nudge) %>% 
+    summarise(prop=100*mean(chose_nudge)) %>% 
+    rowwise() %>% group_walk(~ with(.x, 
+        write_tex("{path}/choice_percentage/nudge{nudge}.tex", "{prop:.1}")
+    ))
+
+# H2: The relative probability of selecting the default will be higher wheen there are many options
+# H3: The relative probability of selecting the default will be higher when there are many features
+# H4: The relative probability of selecting the default will be lower on trials with higher weights deviation 
+glm(chose_nudge ~ nudge * (many_options + many_features + weight_dev),data=human2,family='binomial') %>% 
+    write_model("{path}/choice_interactions")
+
+# H5: Metalevel reward will be higher when the default is shown
+lm(total_points ~ nudge, data=human2) %>% 
+    write_model("{path}/metalevel_return")
+
+human2 %>% 
+    group_by(nudge) %>% 
+    summarise(total=mean(total_points)) %>% 
+    rowwise() %>% group_walk(~ with(.x, 
+        write_tex("{path}/metalevel_return_amounts/nudge{nudge}.tex", "{total:.2}")
+    ))
+
+# H6: Trials with higher weight deviation will benefit have less benefit from default nudges
+lm(total_points ~ nudge * weight_dev, data=human2) %>% 
+    write_model("{path}/metalevel_return_interaction")
+
+# H7: The relative probability of selecting the default will be positive on trials where participants revealed at least one value
+human2 %>% 
+    filter(num_values_revealed > 0) %>% 
+    glm(chose_nudge ~ nudge, data=., family='binomial') %>% 
+    write_model("{path}/choice_revealed")
+
+human2 %>% 
+    filter(num_values_revealed > 0) %>% 
+    group_by(nudge) %>% 
+    summarise(prop=100*mean(chose_nudge)) %>% 
+    rowwise() %>% group_walk(~ with(.x, 
+        write_tex(glue("{path}/choice_percentage_revealed/nudge{nudge}.tex"), "{prop:.2}")
+    ))
 
 
 # %% ==================== Explore ====================
