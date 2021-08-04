@@ -1,6 +1,5 @@
 source("base.r")
 path = paste0("stats/default", if (EXCLUDE) "-exclude" else "")
-
 # %% ==================== Load data ====================
 
 human_raw = read_csv('../data/final_experiments_data/default_data.csv', col_types = cols())
@@ -45,7 +44,7 @@ df = bind_rows(human, model) %>% mutate(
 
 # %% ==================== Plot ====================
 
-df %>% 
+p1 = df %>% 
     ggplot(aes(nudge, chose_nudge, color=n_feature, group=cond)) +
         stat_summary(aes(linetype=n_option), fun=mean, geom="line") +
         point_and_error + 
@@ -54,7 +53,27 @@ df %>%
         scale_linetype_manual(values=c("dotted", "solid")) +
         labs(linetype="Options", x='Nudge', y='Prob Choose Default')
 
-savefig("default", 7, 3)
+savefig("default-choice", 7, 3)
+
+# %% --------
+
+p2 = df %>%
+    ggplot(aes(weight_dev, total_points, color=nudge, fill=nudge)) + 
+    geom_smooth(alpha=0.2, method="lm") +
+    stat_summary_bin(fun.data=mean_se, bins=5) +
+    facet_rep_wrap(~model) +
+    xlim(0, 40) +
+    nudge_colors +
+    payoff_line_lims +
+    labs(x="Preference Idiosyncrasy", y="Net Earnings")
+
+savefig("default-utility", 7, 3)
+
+# %% --------
+
+(p1 / p2) + plot_annotation(tag_levels = 'A')
+savefig("default", 7, 6)
+
 
 # %% ==================== Stats ====================
 
@@ -114,13 +133,14 @@ human2 %>%
 quit()  # don't run below in script
 # %% --------
 
-
-df %>%
-    ggplot(aes(weight_dev, payoff, color=nudge, fill=nudge)) + 
+p3 = df %>%
+    ggplot(aes(weight_dev, chose_nudge, color=nudge, fill=nudge)) + 
     geom_smooth(alpha=0.2) +
-    nudge_colors +
+    stat_summary_bin(fun.data=mean_se, bins=5) +
     facet_rep_wrap(~model) +
-    stat_summary_bin(fun.data=mean_se, bins=5)
+    xlim(0, 40) +
+    nudge_colors +
+    labs(x="Preference Idiosyncrasy", y="Prob Choose Default")
 
 fig("tmp", 7, 3)
 

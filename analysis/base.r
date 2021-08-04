@@ -34,6 +34,7 @@ BLACK = "#111111"
 theme_set(theme_classic(base_size = 14) + theme(
   strip.background = element_blank(),
   strip.text.x = element_text(size=14),
+  plot.tag.position = c(0, 1)
 ))
 update_geom_defaults("line", list(size = 1.2))
 
@@ -173,6 +174,11 @@ point_and_error = list(
     stat_summary(fun=mean, geom="point", size=1)
 )
 
+point_and_error_fast = list(
+    stat_summary(fun.data=mean_cl_normal, geom="errorbar", width=.1, size=.3),
+    stat_summary(fun=mean, geom="point", size=1)
+)
+
 option_feature_grid = facet_grid(n_option ~ n_feature, 
     labeller = label_glue(
         rows = "{n_option} Options",
@@ -189,4 +195,10 @@ option_feature_grid_rep = facet_rep_grid(n_option ~ n_feature,
 
 chance_line = geom_hline(aes(yintercept = 1/n_option), lty="dotted")
 
+random_payoff = 150
+maximum_payoff = 183.63861
+payoff_line_lims = list(
+  geom_hline(yintercept=c(maximum_payoff), linetype="dashed"),
+  coord_cartesian(xlim=c(NULL), ylim=c(random_payoff, maximum_payoff))
+)
 
