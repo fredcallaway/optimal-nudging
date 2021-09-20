@@ -145,7 +145,7 @@ write_model.lm = function(model, path) {
 # %% ==================== Exclusions ====================
 
 args = commandArgs(trailingOnly=TRUE)
-EXCLUDE = (length(args) > 0 & args[1] == "--exclude") 
+EXCLUDE = !(length(args) > 0 & args[1] == "--full") 
 
 apply_exclusion = function(data, is_control, rate=0.5) {
   if (!EXCLUDE) return(data)
@@ -161,11 +161,19 @@ apply_exclusion = function(data, is_control, rate=0.5) {
   filter(data, participant_id %in% keep)
 }
 
+report_exclusion = function(path, human_raw, human) {
+  n_original = length(unique(human_raw$participant_id))
+  n_final = length(unique(human_raw$participant_id))
+  write_tex("{path}/n_final", n_final)
+  write_tex("{path}/n_exclude", n_original - n_final)
+  write_tex("{path}/percent_exclude", round(100*(n_original-n_final) / (n_original)))
+  write_tex("{path}/n_trial", nrow(human))
+}
 
 # %% ==================== Plot utils ====================
 
 savefig = function(name, w, h) {
-  fn = paste0(name, if(EXCLUDE) "-exclude" else "")
+  fn = paste0(name, if(EXCLUDE) "" else "-full")
   fig(fn, w, h)
 }
 

@@ -1,10 +1,10 @@
 source("base.r")
-path = paste0("stats/supersize", if (EXCLUDE) "-exclude" else "")
+path = paste0("stats/supersize", if (EXCLUDE) "" else "-full")
+
 # %% ==================== Load data ====================
 
 human_raw = read_csv('../data/final_experiments_data/supersize_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/supersize_sims.csv', col_types = cols())
-
 # %% --------
 
 human = human_raw %>%
@@ -21,6 +21,8 @@ human = human_raw %>%
         chose_nudge = as.integer(chose_nudge),
     ) %>% apply_exclusion(nudge == "Absent")
 
+report_exclusion(path, human_raw, human)
+
 model = model_raw %>% 
     filter(
         reveal_cost == only(unique(human$reveal_cost)) &
@@ -32,8 +34,8 @@ model = model_raw %>%
         chose_nudge = as.integer(choose_suggested),
         nudge = factor(after, levels=c(-1, 0, 1), labels=c("Absent", "Early", "Late"), ordered=T),
     ) %>% 
+    rename(num_values_revealed = n_click) %>% 
     select(-c(naive, after, choose_suggested))
-
 
 df = bind_rows(human, model) %>% mutate(
     model = factor(if_else(participant_id == "model", "Model", "Human"), levels=c("Model", "Human")),
@@ -53,6 +55,19 @@ df %>%
     labs(x="Suggestion Time", y="Prob Choose Suggestion")
 
 savefig("supersize", 7, 3)
+
+# %% --------
+
+df %>% 
+    ggplot(aes(nudge, num_values_revealed, color=n_feature, group=n_feature)) +
+    facet_rep_grid(~model) + 
+    stat_summary(fun.data=mean_se, geom="line") +
+    point_and_error +
+    feature_colors +
+    # coord_cartesian(xlim=c(NULL), ylim=c(0, 0.5)) + 
+    labs(x="Suggestion Time", y="Number of Values Revealed")
+
+savefig("tmp", 7, 3)
 
 # %% ==================== Stats ====================
 

@@ -46,22 +46,23 @@ end
 
 function simulate_supersize_after(pol::Policy, s::State, b::Belief, naive::Bool)
     # first decision
-    choice, payoff, cost = simulate(pol, s, b)
+    choice, payoff, cost, clicks = simulate(pol, s, b)
     s1, b1 = add_new_option(s, b, naive)
     # second decision
-    choice, payoff, cost1 = simulate(pol, s1, b1)
+    choice, payoff, cost1, clicks1 = simulate(pol, s1, b1)
     cost += cost1
-    (;choice, payoff, cost)
+    append!(clicks, clicks1)
+    (;choice, payoff, cost, clicks)
 end
 
 function simulate_supersize(pol, s, b, naive, after)    
-    choice, payoff, cost = after ?
+    choice, payoff, cost, clicks = after ?
       simulate_supersize_after(pol, s, b, naive) :
       simulate(pol, add_new_option(s, b, naive)...)
 
-
-    (naive=Int(naive), after=Int(after), decision_cost=cost, payoff,
+    (naive=Int(naive), after=Int(after), decision_cost=cost, payoff, 
      weight_dev = sum(abs.(s.weights .- mean(s.weights))),
+     n_click = length(clicks),
      choose_suggested = Int(choice == s.m.n_option+1))
 end
 

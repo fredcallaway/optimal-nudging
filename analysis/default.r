@@ -1,5 +1,6 @@
 source("base.r")
-path = paste0("stats/default", if (EXCLUDE) "-exclude" else "")
+path = paste0("stats/default", if (EXCLUDE) "" else "-full")
+
 # %% ==================== Load data ====================
 
 human_raw = read_csv('../data/final_experiments_data/default_data.csv', col_types = cols())
@@ -24,6 +25,7 @@ human = human_raw %>%
         chose_nudge = as.integer(chose_nudge),
     ) %>% apply_exclusion(!nudge)
 
+report_exclusion(path, human_raw, human)
 
 model = model_raw %>% 
     filter(reveal_cost == only(unique(human$reveal_cost))) %>% 
@@ -31,7 +33,8 @@ model = model_raw %>%
     mutate(
         participant_id = "model",
         chose_nudge = choose_default,
-        total_points = payoff - decision_cost
+        total_points = payoff - decision_cost,
+        num_values_revealed = decision_cost / only(unique(reveal_cost))
     )
 
 df = bind_rows(human, model) %>% mutate(
@@ -53,13 +56,11 @@ p1 = df %>%
         scale_linetype_manual(values=c("dotted", "solid")) +
         labs(linetype="Options", x='Nudge', y='Prob Choose Default')
 
-savefig("default-choice", 7, 3)
-
-# %% --------
+# savefig("default-choice", 7, 3)
 
 p2 = df %>%
     ggplot(aes(weight_dev, total_points, color=nudge, fill=nudge)) + 
-    geom_smooth(alpha=0.2, method="lm") +
+    geom_smooth(alpha=0.2) +
     stat_summary_bin(fun.data=mean_se, bins=5) +
     facet_rep_wrap(~model) +
     xlim(0, 40) +
@@ -67,13 +68,10 @@ p2 = df %>%
     payoff_line_lims +
     labs(x="Preference Idiosyncrasy", y="Net Earnings")
 
-savefig("default-utility", 7, 3)
-
-# %% --------
+# savefig("default-utility", 7, 3)
 
 (p1 / p2) + plot_annotation(tag_levels = 'A')
 savefig("default", 7, 6)
-
 
 # %% ==================== Stats ====================
 
@@ -125,12 +123,58 @@ human2 %>%
     group_by(nudge) %>% 
     summarise(prop=100*mean(chose_nudge)) %>% 
     rowwise() %>% group_walk(~ with(.x, 
-        write_tex(glue("{path}/choice_percentage_revealed/nudge{nudge}"), "{prop:.2}")
+        write_tex(glue("{path}/choice_percentage_revealed/nudge{nudge}"), "{prop:.1}")
     ))
+
+df %>%
+    filter(num_values_revealed > 0) %>% 
+    group_by(model, nudge) %>% 
+    summarise(prop=100*mean(chose_nudge)) %>% 
+    rowwise() %>% group_walk(~ with(.x, 
+        write_tex(glue("{path}/choice_percentage_revealed/{model}_{nudge}"), "{prop:.1}")
+    ))
+
+df %>% 
+    group_by(model, nudge) %>% 
+    summarise(prop=100*mean(num_values_revealed == 0)) %>% 
+    rowwise() %>% group_walk(~ with(.x, {
+        write_tex("{path}/no_deliberation/{model}_{nudge}", "{prop:.1}")
+        write_tex(glue("{path}/no_deliberation/{model}_{nudge}_inv"), "{100-prop:.1}")
+    }))
+
 
 
 # %% ==================== Explore ====================
 quit()  # don't run below in script
+# %% --------
+df %>% 
+    group_by(model, nudge) %>% 
+    summarise(mean(num_values_revealed == 0))
+
+# %% --------
+
+df %>% 
+    mutate(no_reveal = num_values_revealed == 0) %>% 
+    ggplot(aes(nudge, chose_nudge, color=no_reveal, group=no_reveal)) +
+        stat_summary(fun=mean, geom="line") +
+        point_and_error + 
+        facet_rep_grid(~model) + 
+        labs(linetype="Options", x='Nudge', y='Prob Choose Default')
+
+
+# %% --------
+
+
+
+p1 = df %>% 
+    ggplot(aes(nudge, num_values_revealed, color=n_feature, group=cond)) +
+        stat_summary(aes(linetype=n_option), fun=mean, geom="line") +
+        point_and_error + 
+        feature_colors +
+        facet_rep_grid(~model) + 
+        scale_linetype_manual(values=c("dotted", "solid"))
+
+savefig("tmp", 7, 3)
 # %% --------
 
 p3 = df %>%
@@ -222,6 +266,17 @@ fig("tmp", 7, 7)
 df %>% 
     ggplot(aes(n_feature, chose_nudge, color=nudge, group=interaction(nudge,n_option))) +
         stat_summary(aes(linetype=n_option), fun=mean, geom="line") +
+        point_and_error + 
+        nudge_colors +
+        facet_rep_grid(~model) + 
+        scale_linetype_manual(values=c("dotted", "solid"))
+
+savefig("tmp", 7, 3)
+
+# %% --------
+df %>% 
+    ggplot(aes(n_option, chose_nudge, color=nudge, group=interaction(nudge,n_feature))) +
+        stat_summary(aes(linetype=n_feature), fun=mean, geom="line") +
         point_and_error + 
         nudge_colors +
         facet_rep_grid(~model) + 

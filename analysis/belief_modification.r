@@ -1,8 +1,12 @@
 source("base.r")
+path = paste0("stats/modification", if (EXCLUDE) "" else "-full")
+
+if(EXCLUDE) quit()
+
 # %% ==================== Load data ====================
 # EXCLUDE = TRUE
 
-human_raw = read_csv('../data/final_experiments_data/optimal_nudging_changing_belief_state.csv', col_types = cols())
+human_raw = read_csv('../data/final_experiments_data/optimal_nudging_changing_belief_state_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/belief_modification_sims.csv', col_types = cols())
 
 # %% --------
@@ -40,15 +44,13 @@ df = bind_rows(human, model) %>% mutate(
 
 # %% ==================== Plot ====================
 
-random_payoff = 150
-maximum_payoff = 183.63861
-
 df %>% 
     ggplot(aes(nudge, total_points, group=0)) +
         stat_summary(fun=mean, geom="line") +
         point_and_error + 
-        geom_hline(yintercept=c(maximum_payoff), linetype="dashed") +
-        coord_cartesian(xlim=c(NULL), ylim=c(random_payoff, maximum_payoff)) +
+        payoff_line_lims +
+        # geom_hline(yintercept=c(maximum_payoff), linetype="dashed") +
+        # coord_cartesian(xlim=c(NULL), ylim=c(random_payoff, maximum_payoff)) +
         facet_rep_grid(~model) +
         # theme(axis.title.x=element_blank()) + 
         labs(x="Nudge Type", y="Total Points")

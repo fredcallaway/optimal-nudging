@@ -1,5 +1,6 @@
 source("base.r")
-path = paste0("stats/stoplight", if (EXCLUDE) "-exclude" else "")
+path = paste0("stats/stoplight", if (EXCLUDE) "" else "-full")
+
 
 # %% ==================== Load data ====================
 
@@ -26,6 +27,8 @@ human = human_raw %>%
         weight_highlight = highlight_weight,
         nudge = factor(!is_control, levels=c(F,T), labels=c("Absent", "Present"))
     ) %>% apply_exclusion(nudge == "Absent")
+
+report_exclusion(path, human_raw, human)
 
 model = model_raw %>% 
     filter(reveal_cost == 3) %>% 

@@ -42,6 +42,10 @@ let  # pre-compute default beliefs
     DEFAULT_BELIEFS = Dict(zip(hash.(M), db))
     @everywhere DEFAULT_BELIEFS = $DEFAULT_BELIEFS
 end
+# %% --------
+m = M[1]
+estimate_default_beliefs(m)
+m.reward_dist
 
 # %% --------
 
@@ -60,12 +64,13 @@ end |> CSV.write("results/default_sims.csv")
 # %% ==================== Supersize ====================
 @everywhere include("supersize.jl")
 
-M = map(Iterators.product([5], [2, 5], [1,2,3,4])) do (n_option, n_feature, cost)
+M = map(Iterators.product([5], [2, 5], [2])) do (n_option, n_feature, cost)
     MetaMDP(n_option, n_feature, REWARD_DIST, ExperimentWeights(n_feature, 30), cost)
 end |> collect;
 @everywhere M = $M
 
 d = sample_supersize_effect(M[end])
+
 new_effects = sample_many(sample_supersize_effect, M, 50000);
 
 mapmany(M, new_effects) do m, de
