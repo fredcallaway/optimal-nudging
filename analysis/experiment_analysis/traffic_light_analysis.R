@@ -8,6 +8,10 @@ experiment_data$is_control = experiment_data$is_control == 'True'
 experiment_test = subset(experiment_data,is_practice==F)
 
 # H1: Revealed values higher 
+experiment_data$is_control == 'True'
+
+experiment_data$is_control == 'True'
+
 t.test(highlight_num_reveals ~ is_control, data = experiment_test, alternative='greater')
 
 # H2: Highlight value

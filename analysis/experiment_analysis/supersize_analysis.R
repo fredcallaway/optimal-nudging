@@ -1,7 +1,7 @@
 library(dplyr)
 
 # Load and clean data
-experiment_data = read.csv('../../data/final_experiments_data/supersize_data.csv')
+experiment_data = read.csv('../data/final_experiments_data/supersize_data.csv')
 experiment_data$chose_nudge = experiment_data$chose_nudge == "True"
 experiment_data$is_practice = experiment_data$is_practice == "True"
 experiment_data$num_features = as.integer(experiment_data$num_features)

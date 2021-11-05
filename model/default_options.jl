@@ -42,6 +42,7 @@ function sample_default_effect(m::MetaMDP, polclass=MetaGreedy)
     pol = polclass(m)
     s = experiment_state(m)
     b = Belief(s)
+    
     default = argmax(sum(s.payoffs; dims=1)).I[2]
     nudged_b = apply_default!(Belief(s), default)
 

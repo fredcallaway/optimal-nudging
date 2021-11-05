@@ -1,6 +1,7 @@
 __pycache__/
 fighist/
 analysis/figs/
+analysis/stats/
 model/scratch.jl
 .DS_Store
 *.icloud
@@ -10,3 +11,8 @@ analysis/figs-dcpolicy/
 analysis/.fighist/
 analysis/tmpfigs/
 model/.fighist/
+analysis/alt_styles.r
+analysis/figs.bak/
+analysis/results.bak/
+model/results/.trash/
+analysis/Rplots.pdf

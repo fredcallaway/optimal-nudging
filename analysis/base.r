@@ -5,6 +5,7 @@ suppressPackageStartupMessages({
   library(lemon)
   library(patchwork)
   library(jsonlite)
+  library(broom)
 })
 
 knitr::opts_chunk$set(
@@ -33,6 +34,7 @@ BLACK = "#111111"
 theme_set(theme_classic(base_size = 14) + theme(
   strip.background = element_blank(),
   strip.text.x = element_text(size=14),
+  plot.tag.position = c(0, 1)
 ))
 update_geom_defaults("line", list(size = 1.2))
 
@@ -65,6 +67,14 @@ fig = function(name="tmp", w=4, h=4, dpi=320, ...) {
 }
 
 
+only = function(xs) {
+  u = unique(xs)
+  stopifnot(length(u) == 1)
+  u[1]
+}
+
+# %% ==================== Saving results ====================
+
 sprintf_transformer <- function(text, envir) {
   m <- regexpr(":.+$", text)
   if (m != -1) {
@@ -82,24 +92,60 @@ fmt <- function(..., .envir = parent.frame()) {
 }
 
 pval = function(p) {
-  if (p < .001) "p < .001" else glue("p = {str_sub(format(round(p, 3)), 2)}")
+  # if (p < .001) "p < .001" else glue("p = {str_sub(format(round(p, 3)), 2)}")
+  if (p < .001) "p < .001" else glue("p = {str_sub(format(round(p, 3), nsmall=3), 2)}")
 }
 
-write_tex = function(tex, file) {
-  print(fmt("{file}: {tex}"))
-  writeLines("{tex}\\unskip", file)
+tex_writer = function(path) {
+  dir.create(path, recursive=TRUE)
+  function(name, tex) {
+    file = glue("{path}/{name}.tex")
+    print(fmt("{file}: {tex}"))
+    writeLines(paste0(tex, "\\unskip"), file)
+  }
 }
 
-only = function(xs) {
-  u = unique(xs)
-  stopifnot(length(u) == 1)
-  u[1]
+write_tex = function(file, tex) {
+  if (!endsWith(file, ".tex")) {
+    file = paste0(file, ".tex")
+  }
+  file = glue(file, .envir=parent.frame())
+  file = str_replace(file, "[:*]", "-")
+  dir.create(dirname(file), recursive=TRUE, showWarnings=FALSE)
+  tex = fmt(tex, .envir=parent.frame())
+  print(paste0(file, ": ", tex))
+  writeLines(paste0(tex, "\\unskip"), file)
+}
+
+ONE_TAILED = TRUE  # as pre-registered
+
+write_model = function(model, path) UseMethod("write_model")
+write_model.glm = function(model, path) {
+  path = glue(path, .envir=parent.frame())
+  tidy(model) %>% 
+      filter(term != "(Intercept)") %>% 
+      mutate(p.value = if (ONE_TAILED) p.value / 2 else p.value) %>% 
+      rowwise() %>% group_walk(~ with(.x, 
+          write_tex("{path}/{term}.tex",
+                    "$z={statistic:.2},\\ {pval(p.value)}$")
+      ))
+}
+
+write_model.lm = function(model, path) {
+    path = glue(path, .envir=parent.frame())
+    tidy(model) %>% 
+        filter(term != "(Intercept)") %>% 
+        mutate(p.value = if (ONE_TAILED) p.value / 2 else p.value) %>% 
+        rowwise() %>% group_walk(~ with(.x, 
+            write_tex("{path}/{term}.tex",
+                      "$t({model$df})={statistic:.2},\\ {pval(p.value)}$")
+        ))
 }
 
 # %% ==================== Exclusions ====================
 
 args = commandArgs(trailingOnly=TRUE)
-EXCLUDE = (length(args) > 0 & args[1] == "--exclude") 
+EXCLUDE = !(length(args) > 0 & args[1] == "--full") 
 
 apply_exclusion = function(data, is_control, rate=0.5) {
   if (!EXCLUDE) return(data)
@@ -107,7 +153,7 @@ apply_exclusion = function(data, is_control, rate=0.5) {
       filter({{is_control}}) %>% 
       group_by(participant_id) %>% 
       summarise(no_click_rate = mean(num_values_revealed == 0)) %>%
-      filter(no_click_rate < rate) %>% 
+      filter(no_click_rate <= rate) %>% 
       with(participant_id)
   n_total = length(unique(data$participant_id))
   n_exclude = n_total - length(keep)
@@ -115,12 +161,31 @@ apply_exclusion = function(data, is_control, rate=0.5) {
   filter(data, participant_id %in% keep)
 }
 
-savefig = function(name, w, h) {
-  fn = paste0(name, if(EXCLUDE) "-exclude" else "")
-  fig(fn, w, h)
+report_exclusion = function(path, human_raw, human) {
+  n_original = length(unique(human_raw$participant_id))
+  n_final = length(unique(human_raw$participant_id))
+  write_tex("{path}/n_final", n_final)
+  write_tex("{path}/n_exclude", n_original - n_final)
+  write_tex("{path}/percent_exclude", round(100*(n_original-n_final) / (n_original)))
+  write_tex("{path}/n_trial", nrow(human))
 }
 
 # %% ==================== Plot utils ====================
+
+savefig = function(name, w, h) {
+  fn = paste0(name, if(EXCLUDE) "" else "-full")
+  fig(fn, w, h)
+}
+
+point_and_error = list(
+    stat_summary(fun.data=mean_cl_boot, geom="errorbar", width=.1, size=.3),
+    stat_summary(fun=mean, geom="point", size=1)
+)
+
+point_and_error_fast = list(
+    stat_summary(fun.data=mean_cl_normal, geom="errorbar", width=.1, size=.3),
+    stat_summary(fun=mean, geom="point", size=1)
+)
 
 option_feature_grid = facet_grid(n_option ~ n_feature, 
     labeller = label_glue(
@@ -138,4 +203,10 @@ option_feature_grid_rep = facet_rep_grid(n_option ~ n_feature,
 
 chance_line = geom_hline(aes(yintercept = 1/n_option), lty="dotted")
 
+random_payoff = 150
+maximum_payoff = 183.63861
+payoff_line_lims = list(
+  geom_hline(yintercept=c(maximum_payoff), linetype="dashed"),
+  coord_cartesian(xlim=c(NULL), ylim=c(random_payoff, maximum_payoff))
+)
 
