@@ -33,3 +33,5 @@ data.frame(test_data %>%
     mean_click_cost = round(mean(points_click_cost),2)
   )
 )
+
+c = read.csv('../../../nudging/data_analysis/calculated_bonuses/attention-experiment-13-bonuses.csv')

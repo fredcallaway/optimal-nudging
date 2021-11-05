@@ -28,7 +28,7 @@ print(summary(model_1))
 
 # H2: The relative probability of selecting the default will be higher wheen there are many options
 # H3: The relative probability of selecting the default will be higher when there are many features
-# H4: The relative probability fo selecting the default will be lower on trials with higher weights deviation 
+# H4: The relative probability of selecting the default will be lower on trials with higher weights deviation 
 model_2 = glm(chose_nudge ~ trial_nudge * (many_options + many_features + weights_deviation),data=experiment_test,family='binomial')
 print(summary(model_2))
 
@@ -46,11 +46,3 @@ revealed_values = subset(experiment_test,revealed_no_values==F)
 print(data.frame(revealed_values %>% group_by(trial_nudge) %>% summarize(mean_revealed_nudge = mean(chose_nudge))))
 model_4 = glm(chose_nudge ~ trial_nudge, data=revealed_values,family='binomial')
 summary(model_4)
-
-
-unrestricted_model = lm(points_metalevel_reward ~ many_options + many_features+weights_deviation,data=experiment_test)
-restricted_model = lm(points_metalevel_reward ~many_options+many_features,data=experiment_test)
-anova(unrestricted_model,restricted_model)
-summary(unrestricted_model)
-
-
