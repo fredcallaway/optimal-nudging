@@ -13,9 +13,6 @@ function metagreedy_optimal_clicks(b::Belief)
 end
 
 function expected_reward(s::State, b=Belief(s), optimal_clicks=metagreedy_optimal_clicks)
-    # Note: directed cognition actually performs worse than metagreedy which is why
-    # we use it here.
-
     # For efficient cache lookup, we use as a key an unsigned integer where each position in the
     # binary representation is a flag for whether the corresponding cell has been revealed.
     pol = MetaGreedy(s.m)

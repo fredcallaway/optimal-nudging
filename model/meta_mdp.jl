@@ -99,7 +99,7 @@ unobserved(b::Belief) = filter(c -> !observed(b, c), 1:length(b.matrix))
 get_index(b::Belief, c::Int) = Tuple(CartesianIndices(size(b.matrix))[c])
 choice_values(s::State) = sum(s.weighted_payoffs; dims=1)
 choice_values(b::Belief) = sum(mean.(b.matrix); dims=1)
-choice_probs(b::Belief; α=1e20) = softmax(α * choice_values(b))[:]
+choice_probs(x::Union{State,Belief}; α=1e20) = softmax(α * choice_values(x))[:]
 
 "Expected value of terminating computation with a given belief."
 term_reward(b::Belief) = maximum(choice_values(b))

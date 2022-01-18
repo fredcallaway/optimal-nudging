@@ -29,6 +29,7 @@ mdp_features(m) = (
 )
 
 # %% ==================== Default options ====================
+
 @everywhere include("default_options.jl")
 mkpath("results/defaults")
 
@@ -42,12 +43,6 @@ let  # pre-compute default beliefs
     DEFAULT_BELIEFS = Dict(zip(hash.(M), db))
     @everywhere DEFAULT_BELIEFS = $DEFAULT_BELIEFS
 end
-# %% --------
-m = M[1]
-estimate_default_beliefs(m)
-m.reward_dist
-
-# %% --------
 
 default_effects = sample_many(sample_default_effect, M, 10000);
 mapmany(M, default_effects) do m, de
@@ -62,6 +57,7 @@ mapmany(M, default_effects) do m, de
 end |> CSV.write("results/default_sims.csv")
 
 # %% ==================== Supersize ====================
+
 @everywhere include("supersize.jl")
 
 M = map(Iterators.product([5], [2, 5], [2])) do (n_option, n_feature, cost)
@@ -69,10 +65,7 @@ M = map(Iterators.product([5], [2, 5], [2])) do (n_option, n_feature, cost)
 end |> collect;
 @everywhere M = $M
 
-d = sample_supersize_effect(M[end])
-
 new_effects = sample_many(sample_supersize_effect, M, 50000);
-
 mapmany(M, new_effects) do m, de
     mapmany(de) do d
         map(d) do x
@@ -81,7 +74,8 @@ mapmany(M, new_effects) do m, de
     end
 end |> CSV.write("results/supersize_sims.csv")
 
-# %% ==================== Attention ====================
+# %% ==================== Information Highlighting ====================
+
 @everywhere include("attention.jl")
 
 M = map(Iterators.product([5], [3], [3], 1:28, [1.])) do (n_option, n_feature, cost, weight_highlight, α)
@@ -89,9 +83,7 @@ M = map(Iterators.product([5], [3], [3], 1:28, [1.])) do (n_option, n_feature, c
     (m, α)
 end |> collect;
 
-d = sample_attention_effect(M[end])
 attention_effects = sample_many(sample_attention_effect, M, 5000);
-
 mapmany(M, attention_effects) do (m, α), de
     mapmany(de) do d
         map(0:1, [d.without, d.with]) do nudge, x
@@ -104,32 +96,3 @@ mapmany(M, attention_effects) do (m, α), de
         end
     end
 end |> CSV.write("results/attention_sims.csv")
-
-
-# %% ==================== Attention - ALT ====================
-@everywhere include("attention.jl")
-
-M = map(Iterators.product([5], [3], [3], [1.])) do (n_option, n_feature, cost, α)
-    m = MetaMDP(n_option, n_feature, REWARD_DIST, FixedWeights([2, 8, 20]), cost)
-    (m, α)
-end |> collect;
-
-d = sample_attention_effect(M[end])
-attention_effects = sample_many(M, 10000) do x
-    sample_attention_effect(x; rand_feature=true)
-end
-
-data = mapmany(M, attention_effects) do (m, α), de
-    mapmany(de) do d
-        map(0:1, [d.without, d.with]) do nudge, x
-            (;mdp_features(m)...,
-             α,
-             nudge,
-             d.weight_dev,
-             d.weight_highlight,
-             x...)
-        end
-    end
-end;
-
-DataFrame(data) |> CSV.write("results/attention_sims_alt2.csv")

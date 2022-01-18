@@ -32,13 +32,13 @@ function Trial(d)
         d["weights"] |> JSON.parse |> Vector{Float64},
         payoffs,
         d["cost_matrix"] |> parse_matrix,
-        Int[],
-        # invert_index(n_feature, n_option)[JSON.parse(d["uncovered_values"]) .+ 1],
+        # Int[],
+        invert_index(n_feature, n_option)[JSON.parse(d["uncovered_values"]) .+ 1],
         # d["uncovered_value_vec"] .+ 1,
         d["selected_option"] + 1
     )
 end
 
-function load_trials(name)
-    map(Trial, eachrow(CSV.read("../data/$name.csv")))
+function load_trials(path)
+    map(Trial, eachrow(CSV.read(path, DataFrame)))
 end

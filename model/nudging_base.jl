@@ -55,6 +55,14 @@ struct ExperimentWeights <: Distribution{Multivariate,Discrete}
     total::Int
 end
 
+function domain(d::ExperimentWeights)
+    mx = d.total - (d.N - 1)
+    res = collect(Iterators.product(repeat([1:mx], d.N)...))[:]
+    filter!(res) do x
+        sum(x) == d.total
+    end
+end
+
 function Base.rand(d::ExperimentWeights)
     T = d.total - d.N
     x = [0; sort!(rand(0:T, d.N-1)); T]
