@@ -3,7 +3,7 @@ path = paste0("stats/default", if (EXCLUDE) "" else "-full")
 
 # %% ==================== Load data ====================
 
-human_raw = read_csv('../data/final_experiments_data/default_data.csv', col_types = cols())
+human_raw = read_csv('../data/final_experiments_data/reported_experiments/default_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/default_sims.csv', col_types = cols())
 
 # %% --------
@@ -81,6 +81,7 @@ human2 = human %>% mutate(
     many_features = as.integer(n_feature == 5),
 )
 # H1: Relative probability of selecting the default is positive
+
 glm(chose_nudge ~ nudge, data = human2, family='binomial') %>% 
     write_model("{path}/choice_simple")
 
@@ -148,8 +149,14 @@ df %>%
 quit()  # don't run below in script
 # %% --------
 df %>% 
+    mutate(no_click = num_values_revealed == 0) %>% 
+    group_by(model, no_click, nudge) %>% 
+    summarise(mean(chose_nudge))
+# %% --------
+df %>% 
+    filter(num_values_revealed > 0) %>% 
     group_by(model, nudge) %>% 
-    summarise(mean(num_values_revealed == 0))
+    summarise(mean(chose_nudge))
 
 # %% --------
 

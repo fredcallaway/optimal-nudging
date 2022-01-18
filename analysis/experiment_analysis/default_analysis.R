@@ -2,7 +2,7 @@ library(dplyr)
 library(lme4)
 
 # Load and clean data
-experiment_data = read.csv('../../data/final_experiments_data/default_data.csv')
+experiment_data = read.csv('../../data/final_experiments_data/reported_experiments/default_data.csv')
 experiment_data$is_practice = experiment_data$is_practice == "True"
 experiment_data$many_options = experiment_data$og_baskets == 5
 experiment_data$many_features = experiment_data$num_features == 5

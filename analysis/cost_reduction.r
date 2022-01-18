@@ -1,8 +1,11 @@
 source("base.r")
-# %% ==================== Load data ====================
-EXCLUDE = TRUE
+EXCLUDE = FALSE
+# path = paste0("stats/reduction", if (EXCLUDE) "" else "-full")
+path = "stats/reduction"
 
-human_raw = read_csv('../data/final_experiments_data/optimal_nudging_changing_costs.csv', col_types = cols())
+# %% ==================== Load data ====================
+
+human_raw = read_csv('../data/final_experiments_data/reported_experiments/optimal_nudging_changing_costs_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/cost_reduction_sims.csv', col_types = cols())
 
 # %% --------
@@ -20,7 +23,9 @@ human = human_raw %>%
         decision_cost = points_click_cost,
         payoff = gross_earnings * 3000,
         total_points = net_earnings * 3000,
-    ) %>% apply_exclusion(TRUE)
+    ) # %>% apply_exclusion(TRUE)
+
+report_exclusion(path, human_raw, human)
 
 model = model_raw %>% 
     select(-problem_id) %>% 
@@ -37,6 +42,8 @@ df = bind_rows(human, model) %>% mutate(
     nudge = recode_factor(nudge_type, 'random'='Random', 'extreme'='Extreme', 'greedy'='Optimal'),
     cond = glue("{n_option} Options {n_feature} Features")
 )
+human = filter(df, model=="Human")
+model = filter(df, model=="Model")
 
 # %% ==================== Plot ====================
 
@@ -54,6 +61,29 @@ df %>%
         labs(x="Nudge Type", y="Total Points")
 
 savefig("cost_reduction", 7, 3)
+
+# %% ==================== Stats ====================
+human$nudge = factor(human$nudge, levels = c("Optimal", "Extreme", "Random"))
+
+write_effect = function(var, fmt="{val:.1}") {
+    svar = substitute(var)
+    human %>% 
+        group_by(nudge) %>% 
+        summarise(val=mean({{var}})) %>%
+        rowwise() %>% group_walk(~ with(.x, 
+            write_tex("{path}/{svar}/mean/{nudge}", fmt)
+        ))
+    human %>% 
+        tidylm(nudge, {{var}}) %>% 
+        write_model("{path}/{svar}/model")
+}
+
+write_effect(total_points)
+write_effect(payoff)
+write_effect(decision_cost)
+
+
+
 
 # %% ==================== Explore ====================
 quit()  # don't run below in script

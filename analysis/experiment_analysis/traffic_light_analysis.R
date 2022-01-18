@@ -1,7 +1,7 @@
 library(dplyr)
 
 # Load data
-experiment_data = read.csv('../../data/final_experiments_data/traffic_light_data.csv')
+experiment_data = read.csv('../../data/final_experiments_data/reported_experiments/traffic_light_data.csv')
 experiment_data$is_practice = experiment_data$is_practice == "True"
 experiment_data$is_control = experiment_data$is_control == 'True'
 # Get only test trials

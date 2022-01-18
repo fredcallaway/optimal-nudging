@@ -4,13 +4,13 @@ path = paste0("stats/stoplight", if (EXCLUDE) "" else "-full")
 
 # %% ==================== Load data ====================
 
-human_raw = read_csv('../data/final_experiments_data/traffic_light_data.csv', col_types = cols())
+human_raw = read_csv('../data/final_experiments_data/reported_experiments/traffic_light_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/attention_sims.csv', col_types = cols())
 
 # %% --------
 human = human_raw %>%
     filter(!is_practice) %>% 
-    transmute(
+    transmute(o
         highlight_value, 
         num_values_revealed,
         maximized_highlighted_option,
@@ -67,7 +67,7 @@ p2 = plot_both(highlight_value) +
 # + labs(x="", y="Number of Reveals\nfor Highlighted Feature")
 # + labs(x="Weight of Highlighted Feature", y="Highlighted Feature Value\nof Chosen Option")
 
-(p1 / p2) + plot_layout(guides = "collect")
+(p1 / p2) + plot_layout(guides = "collect") + plot_annotation(tag_levels = 'A')
 
 savefig("stoplight", 7, 6)
 

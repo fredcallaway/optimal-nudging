@@ -16,3 +16,4 @@ analysis/figs.bak/
 analysis/results.bak/
 model/results/.trash/
 analysis/Rplots.pdf
+*.Rhistory

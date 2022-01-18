@@ -3,7 +3,7 @@ path = paste0("stats/supersize", if (EXCLUDE) "" else "-full")
 
 # %% ==================== Load data ====================
 
-human_raw = read_csv('../data/final_experiments_data/supersize_data.csv', col_types = cols())
+human_raw = read_csv('../data/final_experiments_data/reported_experiments/supersize_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/supersize_sims.csv', col_types = cols())
 # %% --------
 
@@ -19,6 +19,7 @@ human = human_raw %>%
         decision_cost = click_cost,
         payoff = gross_earnings,        
         chose_nudge = as.integer(chose_nudge),
+        num_values_revealed = map_int(uncovered_values, ~ length(fromJSON(.x)))
     ) %>% apply_exclusion(nudge == "Absent")
 
 report_exclusion(path, human_raw, human)
@@ -51,6 +52,7 @@ df %>%
     stat_summary(fun.data=mean_se, geom="line") +
     point_and_error +
     feature_colors +
+    geom_hline(aes(yintercept = 1/6), lty="dashed") +
     coord_cartesian(xlim=c(NULL), ylim=c(0, 0.5)) + 
     labs(x="Suggestion Time", y="Prob Choose Suggestion")
 
@@ -84,8 +86,7 @@ nudge_test %>%
          p=1/6, correct=FALSE, alternative='greater')) %>% 
     tidy %>% 
     with(write_tex("{path}/proptest", 
-        "proportion: {estimate:.2}, $\\chi^2({parameter}) = {round(statistic)},\\ {pval(p.value)}$"))
-
+        "{100*estimate:.1}\\% vs. {100/6:.1}\\%, $\\chi^2({parameter}) = {round(statistic)},\\ {pval(p.value)}$"))
 
 # H2: Participants will choose the nudge more when there are many features
 # H3: Participants will accept the nudge more when the suggestion is given early
@@ -97,3 +98,28 @@ glm(chose_nudge ~ many_features+after, data=nudge_test, family='binomial') %>%
 # between chose nudge when many features == T between after 
 glm(chose_nudge ~ many_features*after,data=nudge_test, family='binomial') %>% 
     write_model("{path}/choice_interaction")
+
+# %% ====================  ====================
+
+df %>% 
+    filter(model == "Model" & n_feature==2) %>% 
+    summarise(mean(payoff))
+
+
+# %% --------
+
+df %>% 
+    group_by(model, nudge) %>% 
+    summarise(mean(num_values_revealed==0))
+
+df %>% 
+    filter(num_values_revealed > 0) %>% 
+    ggplot(aes(nudge, chose_nudge, color=n_feature, group=n_feature)) +
+    facet_rep_grid(~model) + 
+    stat_summary(fun.data=mean_se, geom="line") +
+    point_and_error +
+    feature_colors +
+    coord_cartesian(xlim=c(NULL), ylim=c(0, 0.5)) + 
+    labs(x="Suggestion Time", y="Prob Choose Suggestion")
+
+savefig("supersize-alt", 7, 3)

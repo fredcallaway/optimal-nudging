@@ -73,6 +73,13 @@ only = function(xs) {
   u[1]
 }
 
+inject = rlang::inject
+tidylm = function(data, xvar, yvar) {
+    y = ensym(yvar)
+    x = ensym(xvar)
+    inject(lm(!!y ~ !!x, data=data))
+}
+
 # %% ==================== Saving results ====================
 
 sprintf_transformer <- function(text, envir) {
@@ -97,10 +104,12 @@ pval = function(p) {
 }
 
 tex_writer = function(path) {
-  dir.create(path, recursive=TRUE)
+  dir.create(path, recursive=TRUE, showWarnings=FALSE)
   function(name, tex) {
+    name = glue(name, .envir=parent.frame()) %>% str_replace("[:*]", "-")
+    tex = fmt(tex, .envir=parent.frame())
     file = glue("{path}/{name}.tex")
-    print(fmt("{file}: {tex}"))
+    print(paste0(file, ": ", tex))
     writeLines(paste0(tex, "\\unskip"), file)
   }
 }
@@ -163,7 +172,7 @@ apply_exclusion = function(data, is_control, rate=0.5) {
 
 report_exclusion = function(path, human_raw, human) {
   n_original = length(unique(human_raw$participant_id))
-  n_final = length(unique(human_raw$participant_id))
+  n_final = length(unique(human$participant_id))
   write_tex("{path}/n_final", n_final)
   write_tex("{path}/n_exclude", n_original - n_final)
   write_tex("{path}/percent_exclude", round(100*(n_original-n_final) / (n_original)))

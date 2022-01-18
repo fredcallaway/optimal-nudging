@@ -5,7 +5,7 @@ library(dplyr)
 experiment_string = 'optimal_nudging_changing_belief_state_data.csv'
 
 # Load data
-experiment_data = read.csv(paste0('../../data/final_experiments_data/',experiment_string))
+experiment_data = read.csv(paste0('../../data/final_experiments_data/reported_experiments/',experiment_string))
 experiment_data$is_practice = as.logical(experiment_data$is_practice)
 # Make greedy reference level
 experiment_data$nudge_type = factor(experiment_data$nudge_type, levels = c("greedy", "extreme", "random"))
