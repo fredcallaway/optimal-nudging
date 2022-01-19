@@ -100,7 +100,7 @@ end |> CSV.write("results/attention_sims.csv")
 # %% ==================== Optimal nudging ====================
 
 @everywhere include("nudging_base.jl")
-@everywhere include("optimal_nudging_base.jl")
+@everywhere include("optimal_nudging.jl")
 
 # %% --------
 
