@@ -1,9 +1,15 @@
 # Resource-rational nudging
 
-Data, modeling, and analysis from Mouselab nudging experiments. This includes the following experiments:
+Data, modeling, and analysis from Mouselab nudging experiments.
 
-* Default options 
-* Pre and post-choice suggestions
-* Traffic light labeling
-* Optimal nudging: modifying the initial belief state (i.e., setting some costs to zero)
-* Optimal nudging: changing costs (i.e., reducing costs without setting them to zero)
+## Model simulations
+
+Running `julia -p auto model/main.jl` will generate all the model simulations in model/results. 
+
+## Stats
+
+* Experiment 1 - Default options: [analysis/default.r]
+* Experiment 2 - Pre and post-choice suggestions: [analysis/supersize.r]
+* Experiment 3 - Traffic light labeling [analysis/stoplight.r]
+* Experiment 4 - Optimal belief modification [analysis/belief_modification.r]
+* Experiment 5 - Optimal cost reduction: [analysis/cost_reduction.r]

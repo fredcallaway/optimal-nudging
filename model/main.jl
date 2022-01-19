@@ -32,7 +32,6 @@ mdp_features(m) = (
 # %% ==================== Default options ====================
 
 @everywhere include("default_options.jl")
-mkpath("results/defaults")
 
 M = map(Iterators.product([2, 5], [2, 5], 1:4)) do (n_option, n_feature, cost)
     MetaMDP(n_option, n_feature, REWARD_DIST, ExperimentWeights(n_feature, 30), cost)
