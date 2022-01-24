@@ -3,7 +3,7 @@ fighist/
 analysis/figs/
 analysis/stats/
 model/scratch.jl
-.DS_Store
+*.DS_Store
 *.icloud
 analysis/old/
 model/bak/
