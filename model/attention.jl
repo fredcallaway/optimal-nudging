@@ -32,7 +32,7 @@ function simulate_attention(pol, s, feature)
         n_click_highlight = isempty(clicks) ? 0 : sum(c in highlight_clicks for c in clicks),
         decision_cost = cost,
         highlight_value,
-        highlight_loss = highlight_value - maximum(highlight_values),
+        max_highlight_value=maximum(highlight_values),
         payoff,
     )
 end
