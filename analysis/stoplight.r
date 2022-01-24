@@ -4,13 +4,13 @@ path = paste0("stats/stoplight", if (EXCLUDE) "" else "-full")
 
 # %% ==================== Load data ====================
 
-human_raw = read_csv('../data/final_experiments_data/reported_experiments/traffic_light_data.csv', col_types = cols())
-model_raw = read_csv('../model/results/attention_sims.csv', col_types = cols())
+human_raw = read_csv('../data/final_experiments_data/reported_experiments/stoplight_data.csv', col_types = cols())
+model_raw = read_csv('../model/results/stoplight_sims.csv', col_types = cols())
 
 # %% --------
 human = human_raw %>%
     filter(!is_practice) %>% 
-    transmute(o
+    transmute(
         highlight_value, 
         num_values_revealed,
         maximized_highlighted_option,

@@ -74,9 +74,9 @@ mapmany(M, new_effects) do m, de
     end
 end |> CSV.write("results/supersize_sims.csv")
 
-# %% ==================== Information Highlighting ====================
+# %% ==================== Information highlighting (stoplight) ====================
 
-@everywhere include("attention.jl")
+@everywhere include("stoplight.jl")
 
 M = map(Iterators.product([5], [3], [3], 1:28, [1.])) do (n_option, n_feature, cost, weight_highlight, α)
     m = MetaMDP(n_option, n_feature, REWARD_DIST, AttentionExperimentWeights(n_feature, 30, weight_highlight), cost)
@@ -95,7 +95,7 @@ mapmany(M, attention_effects) do (m, α), de
              x...)
         end
     end
-end |> CSV.write("results/attention_sims.csv")
+end |> CSV.write("results/stoplight_sims.csv")
 
 # %% ==================== Optimal nudging ====================
 

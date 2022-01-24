@@ -3,7 +3,7 @@ path = paste0("stats/supersize", if (EXCLUDE) "" else "-full")
 
 # %% ==================== Load data ====================
 
-human_raw = read_csv('../data/final_experiments_data/reported_experiments/supersize_data.csv', col_types = cols())
+human_raw = read_csv('../data/experiments/reported_experiments/supersize_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/supersize_sims.csv', col_types = cols())
 # %% --------
 

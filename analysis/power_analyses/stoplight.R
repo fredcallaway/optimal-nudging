@@ -16,7 +16,7 @@ library(dplyr)
 # A int for the number of problems each participant should do (num_problems)
 stoplight_power_analysis = function(num_sims_per_combo,sample_sizes,num_problems){
   # Load sim data
-  simulation_data = read.csv('../../model/results/attention_sims.csv')
+  simulation_data = read.csv('../../model/results/stoplight_sims.csv')
   simulation_data$is_control = simulation_data$nudge=='absent'
   
   # Subset into control and nudge data

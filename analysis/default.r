@@ -3,7 +3,7 @@ path = paste0("stats/default", if (EXCLUDE) "" else "-full")
 
 # %% ==================== Load data ====================
 
-human_raw = read_csv('../data/final_experiments_data/reported_experiments/default_data.csv', col_types = cols())
+human_raw = read_csv('../data/experiments/reported_experiments/default_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/default_sims.csv', col_types = cols())
 
 # %% --------
