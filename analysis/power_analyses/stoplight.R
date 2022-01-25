@@ -17,7 +17,8 @@ library(dplyr)
 stoplight_power_analysis = function(num_sims_per_combo,sample_sizes,num_problems){
   # Load sim data
   simulation_data = read.csv('../../model/results/stoplight_sims.csv')
-  simulation_data$is_control = simulation_data$nudge=='absent'
+  simulation_data$is_control = simulation_data$nudge==0
+  simulation_data$maximized_highlight_value = simulation_data$max_highlight_value == simulation_data$highlight_value
   
   # Subset into control and nudge data
   control_data = subset(simulation_data,is_control==T)
@@ -67,18 +68,18 @@ sample_trials = function(input_data,num_participants_even_weights,num_participan
 # Runs all pre-registered hypothesis tests on sampled sim data 
 hypothesis_tests = function(nudge_trials,control_trials,num_problems,num_participants,simulation){
   # H1: Revealed values higher on nudge trials
-  revealed_values_p_value = t.test(nudge_trials$n_click_highlight,
+  h1_p_value = t.test(nudge_trials$n_click_highlight,
                                    control_trials$n_click_highlight,
                                    alternative='greater')$p.value
   
   # H2: Highlight value higher on nudge trials
-  highlight_value_p_value = t.test(nudge_trials$highlight_value,
+  h2_p_value = t.test(nudge_trials$highlight_value,
                                    control_trials$highlight_value,
                                    alternative='greater')$p.value
   
   # H3: Probability of maximizing the highlighted option higher on nudge trials
-  maximized_highlight_p_value = prop.test(
-    x=c(sum(nudge_trials$max_highlight_value),sum(control_trials$max_highlight_value)),
+  h3_p_value = prop.test(
+    x=c(sum(nudge_trials$maximized_highlight_value),sum(control_trials$maximized_highlight_value)),
     n = c(nrow(nudge_trials),nrow(control_trials)),
     alternative='greater')$p.value
   
@@ -87,12 +88,12 @@ hypothesis_tests = function(nudge_trials,control_trials,num_problems,num_partici
     num_participants,
     simulation,
     num_problems,
-    revealed_values_p_value,
-    highlight_value_p_value,
-    maximized_highlight_p_value,
-    revealed_values_significant = revealed_values_p_value<0.05,
-    highlight_value_significant = highlight_value_p_value<0.05,
-    maximized_highlight_significant = maximized_highlight_p_value<0.05
+    h1_p_value,
+    h2_p_value,
+    h3_p_value,
+    h1_significant = h1_p_value<0.05,
+    h2_significant = h2_p_value<0.05,
+    h3_significant = h3_p_value<0.05
   )
   
   # Add an indicator of whether all hypothesis tests were significant
@@ -109,21 +110,22 @@ hypothesis_tests = function(nudge_trials,control_trials,num_problems,num_partici
 # -- -- -- -- -- -- -- -- -- -- -- 
 # -- -- -- -- -- -- -- -- -- -- -- 
 
-# Set parameters
-num_sims = 100
-# Number of participants
-sample_sizes = c(100,150,200,250,300)
+# Number of times to simulate the experiment
+num_sims = 1000
+# Power analysis will be run for every entry in num_participants
+num_participants = c(150)
+# The number of problems each participant does (must be even)
 num_problems_per_participant = 28
 
-# Get raw power data given num_sims, sample_sizes, and num_problems
+# Get power data
 power = num_sims %>% 
   stoplight_power_analysis(sample_sizes,num_problems_per_participant) %>%
   # Group power data by number of participants and summarize
   group_by(num_participants) %>%
   summarize(
-    revealed_values_power = mean(revealed_values_significant),
-    highlight_value_power = mean(highlight_value_significant),
-    maximized_highlight_power = mean(maximized_highlight_significant),
+    h1_power = mean(h1_significant),
+    highlight_value_power = mean(h2_significant),
+    maximized_highlight_power = mean(h3_significant),
     power = mean(all_significant)
   ) %>%
   data.frame()
