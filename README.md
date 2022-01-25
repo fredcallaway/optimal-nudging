@@ -36,7 +36,7 @@ Note that the naming conventions for the different experiments have changed over
 
 ## Analyses
 
-In the analysis/ directory, running `make results` will generate all the figures and statistics in the paper. Stats are generated ase TeX files in analysis/stats.
+In the analysis/ directory, running `make results` will generate all the figures and statistics in the paper. Stats are generated as TeX files in analysis/stats.
 
 * Experiment 1: [default.r](analysis/default.r)
 * Experiment 2: [supersize.r](analysis/supersize.r)
