@@ -31,7 +31,7 @@ Note that the naming conventions for the different experiments have changed over
 
 * Experiment 1: [default_options.jl](model/default_options.jl)
 * Experiment 2: [supersize.jl](model/supersize.jl)
-* Experiment 3: [attention.jl](model/attention.jl)
+* Experiment 3: [stoplight.jl](model/stoplight.jl)
 * Experiments 4 & 5: [optimal_nudging.jl](model/optimal_nudging.jl)
 
 ## Analyses
