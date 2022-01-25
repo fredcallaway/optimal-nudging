@@ -24,11 +24,14 @@ All reported experiments can be found in data/final_experiments_data. Additional
 
 ## Model simulations
 
-In the model/ directory, running `julia -p auto main.jl` will generate all the model simulations in model/results. Note that the naming conventions have changed over time.
+In the model/ directory, running `julia -p auto main.jl` will generate all the model simulations in model/results. 
+Install all dependencies by running `julia install_deps.jl`.
+It should run with any 1.x version of Julia.
+Note that the naming conventions for the different experiments have changed over time. Sorry.
 
 * Experiment 1: [default_options.jl](model/default_options.jl)
 * Experiment 2: [supersize.jl](model/supersize.jl)
-* Experiment 3: [stoplight.jl](model/stoplight.jl)
+* Experiment 3: [attention.jl](model/attention.jl)
 * Experiments 4 & 5: [optimal_nudging.jl](model/optimal_nudging.jl)
 
 ## Analyses
