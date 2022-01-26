@@ -4,7 +4,7 @@ path = paste0("stats/stoplight", if (EXCLUDE) "" else "-full")
 
 # %% ==================== Load data ====================
 
-human_raw = read_csv('../data/final_experiments_data/reported_experiments/stoplight_data.csv', col_types = cols())
+human_raw = read_csv('../data/experiments/reported_experiments/stoplight_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/stoplight_sims.csv', col_types = cols())
 
 # %% --------
