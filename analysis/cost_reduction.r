@@ -5,7 +5,7 @@ path = "stats/reduction"
 
 # %% ==================== Load data ====================
 
-human_raw = read_csv('../data/final_experiments_data/reported_experiments/optimal_nudging_changing_costs.csv', col_types = cols())
+human_raw = read_csv('../data/final_experiments_data/reported_experiments/optimal_nudging_changing_costs_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/cost_reduction_sims.csv', col_types = cols())
 
 # %% --------

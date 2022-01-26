@@ -18,7 +18,7 @@ All reported experiments can be found in data/final_experiments_data. Additional
 
 * Experiment 1: [default_data.csv](data/experiments/reported_experiments/default_data.csv)
 * Experiment 2: [supersize_data.csv](data/experiments/reported_experiments/supersize_data.csv)
-* Experiment 3: [traffic_light_data.csv](data/experiments/reported_experiments/stoplight_data.csv)
+* Experiment 3: [stoplight_data.csv](data/experiments/reported_experiments/stoplight_data.csv)
 * Experiment 4: [optimal_nudging_changing_belief_state_data.csv](data/experiments/reported_experiments/optimal_nudging_changing_belief_state_data.csv)
 * Experiment 5: [optimal_nudging_changing_costs_data.csv](data/experiments/reported_experiments/optimal_nudging_changing_costs_data.csv)
 
