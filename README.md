@@ -16,7 +16,7 @@ Perform the experiments as they were given to participants at the links below.
 
 * Experiment 1: https://default-options.netlify.app
 * Experiment 2: https://suggested-alternatives.netlify.app
-* Experiment 3: https://information-highlighting.netlify.app
+* Experiment 3: https://stoplight-highlighting.netlify.app
 * Experiment 4: https://optimal-belief-modification.netlify.app
 * Experiment 5: https://optimal-cost-modification.netlify.app
 
@@ -24,11 +24,11 @@ Perform the experiments as they were given to participants at the links below.
 
 All reported experiments can be found in data/final_experiments_data. Additional pilot data can also be found in data/.
 
-* Experiment 1: [default_data.csv](data/final_experiments_data/default_data.csv)
-* Experiment 2: [supersize_data.csv](data/final_experiments_data/supersize_data.csv)
-* Experiment 3: [traffic_light_data.csv](data/final_experiments_data/traffic_light_data.csv)
-* Experiment 4: [optimal_nudging_changing_belief_state_data.csv](data/final_experiments_data/optimal_nudging_changing_belief_state_data.csv)
-* Experiment 5: [optimal_nudging_changing_costs_data.csv](data/final_experiments_data/optimal_nudging_changing_costs_data.csv)
+* Experiment 1: [default_data.csv](data/experiments/reported_experiments/default_data.csv)
+* Experiment 2: [supersize_data.csv](data/experiments/reported_experiments/supersize_data.csv)
+* Experiment 3: [stoplight_data.csv](data/experiments/reported_experiments/stoplight_data.csv)
+* Experiment 4: [optimal_nudging_changing_belief_state_data.csv](data/experiments/reported_experiments/optimal_nudging_changing_belief_state_data.csv)
+* Experiment 5: [optimal_nudging_changing_costs_data.csv](data/experiments/reported_experiments/optimal_nudging_changing_costs_data.csv)
 
 ## Model simulations
 
@@ -44,11 +44,11 @@ Note that the naming conventions for the different experiments have changed over
 
 ## Analyses
 
-In the analysis/ directory, running `make results` will generate all the figures and statistics in the paper. Stats are generated ase TeX files in analysis/stats.
+In the analysis/ directory, running `make results` will generate all the figures and statistics in the paper. Stats are generated as TeX files in analysis/stats.
 
 * Experiment 1: [default.r](analysis/default.r)
 * Experiment 2: [supersize.r](analysis/supersize.r)
 * Experiment 3: [stoplight.r](analysis/stoplight.r)
 * Experiment 4: [belief_modification.r](analysis/belief_modification.r)
-* Experiment 5: [cost_reduction.r](analysis/cost_reduction.r)
+* Experiment 5: [cost_rehttps://princeton.zoom.us/my/fredcallawayduction.r](analysis/cost_reduction.r)
 
