@@ -8,7 +8,7 @@ Perform the experiments as they were given to participants at the links below.
 
 * Experiment 1: https://default-options.netlify.app
 * Experiment 2: https://suggested-alternatives.netlify.app
-* Experiment 3: https://information-highlighting.netlify.app
+* Experiment 3: https://stoplight-highlighting.netlify.app
 * Experiment 4: https://optimal-belief-modification.netlify.app
 * Experiment 5: https://optimal-cost-modification.netlify.app
 
