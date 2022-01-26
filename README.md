@@ -1,6 +1,14 @@
 # Resource-rational nudging
 
-Experiment demos, modeling, and analysis from Mouselab nudging experiments.
+Pre-registrations, experiment demos, modeling, and analysis from Mouselab nudging experiments.
+
+## Pre-registrations
+
+* Experiment 1: https://osf.io/4fcny
+* Experiment 2: https://osf.io/8vnxj
+* Experiment 3: https://osf.io/8pyex
+* Experiment 4: https://osf.io/cs5kx
+* Experiment 5: https://osf.io/gspr4
 
 ## Experiment demos
 
@@ -43,3 +51,4 @@ In the analysis/ directory, running `make results` will generate all the figures
 * Experiment 3: [stoplight.r](analysis/stoplight.r)
 * Experiment 4: [belief_modification.r](analysis/belief_modification.r)
 * Experiment 5: [cost_reduction.r](analysis/cost_reduction.r)
+
