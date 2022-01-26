@@ -39,13 +39,14 @@ theme_set(theme_classic(base_size = 14) + theme(
 update_geom_defaults("line", list(size = 1.2))
 
 feature_colors = scale_colour_manual(values=c(
-  "2"="darkgray", "5"="#E65E68"
+  "2"="gray75", "5"="#E65E68"
 ), aesthetics=c("fill", "colour"), name="Features")
 
 nudge_colors = scale_colour_manual(values=c(
-    "darkgray",
+    "gray75",
     "dodgerblue"
 ), aesthetics=c("fill", "colour"), name="Nudge")
+
 
 kable = knitr::kable
 glue = glue::glue

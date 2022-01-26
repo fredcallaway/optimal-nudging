@@ -55,7 +55,6 @@ p1 = df %>%
         facet_rep_grid(~model) + 
         scale_linetype_manual(values=c("dotted", "solid")) +
         labs(linetype="Options", x='Nudge', y='Prob Choose Default')
-
 # savefig("default-choice", 7, 3)
 
 p2 = df %>%

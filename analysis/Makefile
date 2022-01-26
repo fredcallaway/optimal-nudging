@@ -35,4 +35,4 @@ figs/belief_modification.pdf: belief_modification.r base.r
 results: \
 	figs/default.pdf figs/supersize.pdf figs/stoplight.pdf \
 	figs/default-full.pdf figs/supersize-full.pdf figs/stoplight-full.pdf \
-# 	figs/cost_reduction.pdf figs/belief_modification.pdf
+	figs/cost_reduction-full.pdf figs/belief_modification-full.pdf
