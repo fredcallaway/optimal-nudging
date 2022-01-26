@@ -16,11 +16,11 @@ Perform the experiments as they were given to participants at the links below.
 
 All reported experiments can be found in data/final_experiments_data. Additional pilot data can also be found in data/.
 
-* Experiment 1: [default_data.csv](data/final_experiments_data/default_data.csv)
-* Experiment 2: [supersize_data.csv](data/final_experiments_data/supersize_data.csv)
-* Experiment 3: [traffic_light_data.csv](data/final_experiments_data/traffic_light_data.csv)
-* Experiment 4: [optimal_nudging_changing_belief_state_data.csv](data/final_experiments_data/optimal_nudging_changing_belief_state_data.csv)
-* Experiment 5: [optimal_nudging_changing_costs_data.csv](data/final_experiments_data/optimal_nudging_changing_costs_data.csv)
+* Experiment 1: [default_data.csv](data/experiments/reported_experiments/default_data.csv)
+* Experiment 2: [supersize_data.csv](data/experiments/reported_experiments/supersize_data.csv)
+* Experiment 3: [traffic_light_data.csv](data/experiments/reported_experiments/stoplight_data.csv)
+* Experiment 4: [optimal_nudging_changing_belief_state_data.csv](data/experiments/reported_experiments/optimal_nudging_changing_belief_state_data.csv)
+* Experiment 5: [optimal_nudging_changing_costs_data.csv](data/experiments/reported_experiments/optimal_nudging_changing_costs_data.csv)
 
 ## Model simulations
 
