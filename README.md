@@ -50,5 +50,4 @@ In the analysis/ directory, running `make results` will generate all the figures
 * Experiment 2: [supersize.r](analysis/supersize.r)
 * Experiment 3: [stoplight.r](analysis/stoplight.r)
 * Experiment 4: [belief_modification.r](analysis/belief_modification.r)
-* Experiment 5: [cost_rehttps://princeton.zoom.us/my/fredcallawayduction.r](analysis/cost_reduction.r)
-
+* Experiment 5: [cost_reduction.r](analysis/cost_reduction.r)
