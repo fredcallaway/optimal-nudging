@@ -5,7 +5,7 @@ path = "stats/reduction"
 
 # %% ==================== Load data ====================
 
-human_raw = read_csv('../data/experiments/reported_experiments/optimal_nudging_changing_costs.csv', col_types = cols())
+human_raw = read_csv('../data/experiments/reported_experiments/optimal_nudging_changing_costs_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/cost_reduction_sims.csv', col_types = cols())
 
 # %% --------
@@ -50,7 +50,7 @@ model = filter(df, model=="Model")
 random_payoff = 150
 maximum_payoff = 183.63861
 
-df %>% 
+p1 = df %>% 
     ggplot(aes(nudge, total_points, group=0)) +
         stat_summary(fun=mean, geom="line") +
         point_and_error + 
@@ -61,6 +61,23 @@ df %>%
         labs(x="Nudge Type", y="Total Points")
 
 savefig("cost_reduction", 7, 3)
+
+p2 = human_raw %>%
+  filter(!is_practice) %>%
+  mutate(
+    test_trial = trial_num - 2,
+    total_points = net_earnings * 3000,
+    Nudge = paste(toupper(substr(nudge_type, 1, 1)), substr(nudge_type, 2, nchar(nudge_type)), sep="")
+  ) %>%
+  group_by(test_trial,Nudge) %>%
+  summarize(average_total_points = mean(total_points)) %>%
+  ggplot(aes(x=test_trial,y=average_total_points,color=Nudge,shape=Nudge)) +
+  geom_smooth(alpha=0.2) +
+  stat_summary_bin(fun.data=mean_se, bins=5) +
+  scale_x_continuous(limits=c(0,31)) +
+  labs(x="Trial number", y="Total points")
+
+savefig("cost_reduction_learning_curves", 4, 3)
 
 # %% ==================== Stats ====================
 human$nudge = factor(human$nudge, levels = c("Optimal", "Extreme", "Random"))

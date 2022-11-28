@@ -47,7 +47,7 @@ model = filter(df, model=="Model")
 
 # %% ==================== Plot ====================
 
-df %>% 
+p1 = df %>% 
     ggplot(aes(nudge, total_points, group=0)) +
         stat_summary(fun=mean, geom="line") +
         point_and_error + 
@@ -59,6 +59,24 @@ df %>%
         labs(x="Nudge Type", y="Total Points")
 
 savefig("belief_modification", 7, 3)
+
+p2 = human_raw %>%
+  filter(!is_practice) %>%
+  mutate(
+    test_trial = trial_num - 2,
+    total_points = net_earnings * 3000,
+    Nudge = paste(toupper(substr(nudge_type, 1, 1)), substr(nudge_type, 2, nchar(nudge_type)), sep="")
+  ) %>%
+  group_by(test_trial,Nudge) %>%
+  summarize(average_total_points = mean(total_points)) %>%
+  ggplot(aes(x=test_trial,y=average_total_points,color=Nudge,shape=Nudge)) +
+  geom_smooth(alpha=0.2) +
+  stat_summary_bin(fun.data=mean_se, bins=5) +
+  scale_x_continuous(limits=c(0,31)) +
+  labs(x="Trial number", y="Total points")
+
+savefig("belief_modification_learning_curves", 4, 3)
+
 
 # %% ==================== Stats ====================
 human$nudge = factor(human$nudge, levels = c("Optimal", "Extreme", "Random"))
@@ -89,7 +107,7 @@ df %>%
     pivot_longer(c(total_points, payoff), names_to="name", values_to="value", names_prefix="") %>% 
     ggplot(aes(nudge, value, group=name)) +
         stat_summary(fun=mean, geom="line") +
-        point_and_error + 
+        #point_and_error + 
         # feature_colors +
         facet_rep_grid(~model) +
         geom_hline(yintercept=c(maximum_payoff), linetype="dashed")
@@ -103,7 +121,7 @@ savefig("belief_modification", 7, 3)
 df %>%
     ggplot(aes(nudge, decision_cost, group=0)) +
         stat_summary(fun=mean, geom="line") +
-        point_and_error + 
+        #point_and_error + 
         # feature_colors +
         facet_rep_grid(~model) 
         # scale_linetype_manual(values=c("dotted", "solid")) +
@@ -127,7 +145,7 @@ df %>%
     mutate(high_dev = weight_dev > median(df$weight_dev)) %>% 
     ggplot(aes(nudge, payoff, color=high_dev, group=interaction(n_option, n_feature, high_dev))) + 
     stat_summary(aes(linetype=n_option), fun=mean, geom="line") +
-    point_and_error + 
+    #point_and_error + 
     # nudge_colors +
     # facet_rep_wrap(~model)
     facet_rep_grid(interaction(n_feature, n_option) ~ model, scales="free_y")
@@ -139,7 +157,7 @@ df %>%
     mutate(high_dev = weight_dev > median(df$weight_dev)) %>% 
     ggplot(aes(nudge, payoff, color=high_dev, group=high_dev)) + 
     stat_summary(fun=mean, geom="line") +
-    point_and_error + 
+    #point_and_error + 
     # nudge_colors +
     # facet_rep_wrap(~model)
     facet_rep_grid(interaction(n_feature, n_option) ~ model, scales="free_y")
@@ -232,3 +250,48 @@ fig(w=6)
 #     facet_wrap(~model)
 
 # fig(w=7, h=3)
+
+
+p1 = df %>% 
+  ggplot(aes(nudge, payoff, group=0)) +
+  stat_summary(fun=mean, geom="line") +
+  point_and_error + 
+  payoff_line_lims +
+  # geom_hline(yintercept=c(maximum_payoff), linetype="dashed") +
+  # coord_cartesian(xlim=c(NULL), ylim=c(random_payoff, maximum_payoff)) +
+  facet_rep_grid(~model) +
+  # theme(axis.title.x=element_blank()) + 
+  labs(x="Nudge Type", y="Basket value")
+savefig("basket_value", 7, 3)
+
+p2 = df %>% 
+  ggplot(aes(nudge, decision_cost, group=0)) +
+  stat_summary(fun=mean, geom="line") +
+  point_and_error + 
+  #payoff_line_lims +
+  # geom_hline(yintercept=c(maximum_payoff), linetype="dashed") +
+  # coord_cartesian(xlim=c(NULL), ylim=c(random_payoff, maximum_payoff)) +
+  facet_rep_grid(~model) +
+  # theme(axis.title.x=element_blank()) + 
+  labs(x="Nudge Type", y="Click cost")
+savefig("decision_cost", 7, 3)
+
+
+
+p1 = df %>%
+  mutate(Idiosyncratic = weight_dev > median(weight_dev)) %>%
+  ggplot(aes(nudge, total_points, color=Idiosyncratic, group=Idiosyncratic)) +
+  stat_summary(fun=mean, geom="line") +
+  point_and_error + 
+  #payoff_line_lims +
+  # geom_hline(yintercept=c(maximum_payoff), linetype="dashed") +
+  # coord_cartesian(xlim=c(NULL), ylim=c(random_payoff, maximum_payoff)) +
+  facet_rep_grid(~model) +
+  # theme(axis.title.x=element_blank()) + 
+  labs(x="Nudge Type", y="Total points")
+
+savefig("ml_reward_idiosynarcy", 7, 3)
+
+
+
+

@@ -46,7 +46,7 @@ df = bind_rows(human, model) %>% mutate(
 
 # %% ==================== Plot ====================
 
-df %>% 
+p1 = df %>% 
     ggplot(aes(nudge, chose_nudge, color=n_feature, group=n_feature)) +
     facet_rep_grid(~model) + 
     stat_summary(fun.data=mean_se, geom="line") +
@@ -57,6 +57,29 @@ df %>%
     labs(x="Suggestion Time", y="Prob Choose Suggestion")
 
 savefig("supersize", 7, 3)
+
+## learning curves: no exclusion
+p2 = human_raw %>%
+  filter(!is_practice) %>%
+  subset(trial_nudge != 'control') %>%
+  mutate(
+    Nudge = ifelse(trial_nudge == 'pre-supersize','Early suggestion','Late suggestions'),
+    chose_nudge = as.integer(chose_nudge),
+    test_trial = trial_num - 2,
+    n_feature = as.factor(num_features)
+  ) %>%
+  group_by(test_trial,Nudge,n_feature) %>%
+  summarize(average_choose_nudge = mean(chose_nudge)) %>%
+  ggplot(aes(x=test_trial,y=average_choose_nudge,color=n_feature,group=n_feature)) +
+  geom_smooth(alpha=0.2) +
+  stat_summary_bin(fun.data=mean_se, bins=5) +
+  scale_x_continuous(limits = c(0,31)) +
+  facet_grid(cols=vars(Nudge)) +
+  feature_colors +
+  labs(x="Trial number", y="Prob Choose Suggestion")
+
+savefig("supersize_learning_curves", 7, 3)
+
 
 # %% --------
 

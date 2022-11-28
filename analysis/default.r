@@ -72,6 +72,26 @@ p2 = df %>%
 (p1 / p2) + plot_annotation(tag_levels = 'A')
 savefig("default", 7, 6)
 
+# learning curves: no exclusion
+p3 = human_raw %>%
+  filter(!is_practice) %>%
+  mutate(
+    nudge = trial_nudge == 'default',
+    chose_nudge = as.integer(chose_nudge),
+    test_trial = trial_num - 2
+  ) %>%
+  group_by(test_trial,nudge) %>%
+  summarize(average_choose_nudge = mean(chose_nudge)) %>%
+  ggplot(aes(x=test_trial,y=average_choose_nudge,color=nudge)) +
+  geom_smooth(alpha=0.2) +
+  stat_summary_bin(fun.data=mean_se, bins=5) +
+  nudge_colors +
+  scale_x_continuous(limits = c(0,32)) +
+  labs(x="Trial number", y="Prob Choose Default")
+
+savefig("default_learning_curves", 4, 3)
+  
+
 # %% ==================== Stats ====================
 
 human2 = human %>% mutate(
@@ -167,7 +187,6 @@ df %>%
         facet_rep_grid(~model) + 
         labs(linetype="Options", x='Nudge', y='Prob Choose Default')
 
-
 # %% --------
 
 
@@ -195,7 +214,7 @@ p3 = df %>%
 fig("tmp", 7, 3)
 
 # %% --------
-df %>%
+p1 = df %>%
     mutate(high_dev = weight_dev > median(df$weight_dev)) %>% 
     ggplot(aes(nudge, payoff, color=high_dev, group=interaction(n_option, n_feature, high_dev))) + 
     stat_summary(aes(linetype=n_option), fun=mean, geom="line") +
@@ -211,13 +230,10 @@ df %>%
     mutate(high_dev = weight_dev > median(df$weight_dev)) %>% 
     ggplot(aes(nudge, payoff, color=high_dev, group=high_dev)) + 
     stat_summary(fun=mean, geom="line") +
-    point_and_error + 
+    #point_and_error + 
     # nudge_colors +
     # facet_rep_wrap(~model)
     facet_rep_grid(interaction(n_feature, n_option) ~ model, scales="free_y")
-
-
-fig("tmp", 7, 7)
 
 # %% --------
 df %>% 
@@ -231,7 +247,7 @@ df %>%
     ggplot(aes(high_dev, benefit, color=n_feature, group=interaction(n_option,n_feature))) +
         geom_hline(yintercept=0) +
         stat_summary(aes(linetype=n_option), fun=mean, geom="line") +
-        point_and_error + 
+        #point_and_error + 
         feature_colors +
         facet_rep_grid(~model) + 
         scale_linetype_manual(values=c("dotted", "solid")) +
@@ -272,7 +288,7 @@ fig("tmp", 7, 7)
 df %>% 
     ggplot(aes(n_feature, chose_nudge, color=nudge, group=interaction(nudge,n_option))) +
         stat_summary(aes(linetype=n_option), fun=mean, geom="line") +
-        point_and_error + 
+        #point_and_error + 
         nudge_colors +
         facet_rep_grid(~model) + 
         scale_linetype_manual(values=c("dotted", "solid"))
@@ -283,7 +299,7 @@ savefig("tmp", 7, 3)
 df %>% 
     ggplot(aes(n_option, chose_nudge, color=nudge, group=interaction(nudge,n_feature))) +
         stat_summary(aes(linetype=n_feature), fun=mean, geom="line") +
-        point_and_error + 
+        #point_and_error + 
         nudge_colors +
         facet_rep_grid(~model) + 
         scale_linetype_manual(values=c("dotted", "solid"))
@@ -315,3 +331,87 @@ fig(w=6)
 #     facet_wrap(~model)
 
 # fig(w=7, h=3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+p1 = df %>% 
+  ggplot(aes(nudge, chose_nudge)) +
+  stat_summary(fun=mean, geom="point") +
+  # point_and_error + 
+  stat_summary(fun.data=mean_cl_boot, geom="errorbar", width=.15, size=.5) + 
+  feature_colors +
+  facet_rep_grid(~model) + 
+  scale_linetype_manual(values=c("dotted", "solid")) +
+  labs(linetype="Options", x='Nudge', y='Prob Choose Default')
+savefig("overall-means", 7, 3)
+
+
+
+
+p1 = df %>% 
+  ggplot(aes(nudge, chose_nudge)) +
+  stat_summary(fun=mean, geom="point") +
+  # point_and_error + 
+  stat_summary(fun.data=mean_cl_boot, geom="errorbar", width=.2, size=.5) + 
+  feature_colors +
+  facet_rep_grid(~model) + 
+  scale_linetype_manual(values=c("dotted", "solid")) +
+  labs(linetype="Options", x='Nudge', y='Prob Choose Default')
+savefig("overall-means", 7, 3)
+
+p2 = df %>% 
+  subset(num_values_revealed != 0) %>%
+  ggplot(aes(nudge, chose_nudge)) +
+  stat_summary(fun=mean, geom="point") +
+  # point_and_error + 
+  stat_summary(fun.data=mean_cl_boot, geom="errorbar", width=.2, size=.5) + 
+  feature_colors +
+  facet_rep_grid(~model) + 
+  scale_linetype_manual(values=c("dotted", "solid")) +
+  labs(linetype="Options", x='Nudge', y='Prob Choose Default')
+
+
+savefig("effects_nudge_payoff_big_facet", 7, 3)
+
+
+p1 = df %>% 
+  ggplot(aes(nudge, total_points)) +
+  stat_summary(fun=mean, geom="point") +
+  # point_and_error + 
+  stat_summary(fun.data=mean_cl_boot, geom="errorbar", width=.2, size=.5) + 
+  feature_colors +
+  facet_rep_grid(~model) + 
+  scale_linetype_manual(values=c("dotted", "solid")) +
+  labs(linetype="Options", x='Nudge', y='Net earnings')
+savefig("nudge-effects-earnings", 7, 3)
+
+
+
+
+df %>%
+  ggplot(aes(weight_dev, total_points, color=nudge, fill=nudge)) + 
+  geom_smooth(alpha=0.2) +
+  #stat_summary_bin(fun.data=mean_se, bins=5) +
+  facet_rep_wrap(~model) +
+  xlim(0, 40) +
+  nudge_colors +
+  payoff_line_lims +
+  labs(x="Preference Idiosyncrasy", y="Net Earnings")
+
+

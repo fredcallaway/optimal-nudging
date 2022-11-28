@@ -71,6 +71,43 @@ p2 = plot_both(highlight_value) +
 
 savefig("stoplight", 7, 6)
 
+p3 = human_raw %>%
+  filter(!is_practice) %>%
+  mutate(
+    Nudge  = ifelse(is_control,'Absent','Present'),
+    test_trial = trial_num - 2
+  ) %>%
+  group_by(test_trial,Nudge) %>%
+  summarize(average_n_highlight = mean(highlight_num_reveals)) %>%
+  ggplot(aes(x=test_trial,y=average_n_highlight,color=Nudge)) +
+  geom_smooth(alpha=0.2) +
+  stat_summary_bin(fun.data=mean_se, bins=5) +
+  nudge_colors +
+  scale_x_continuous(limits=c(0,31)) +
+  labs(x="Trial number", y="Highlight Reveals")
+
+savefig("stoplight_n_highlight_learning_curves", 4, 3)
+
+
+p4 = human_raw %>%
+  filter(!is_practice) %>%
+  mutate(
+    Nudge  = ifelse(is_control,'Absent','Present'),
+    test_trial = trial_num - 2
+  ) %>%
+  group_by(test_trial,Nudge) %>%
+  summarize(average_highlight_value = mean(highlight_value)) %>%
+  ggplot(aes(x=test_trial,y=average_highlight_value,color=Nudge)) +
+  geom_smooth(alpha=0.2) +
+  stat_summary_bin(fun.data=mean_se, bins=5) +
+  nudge_colors +
+  scale_x_continuous(limits=c(0,31)) +
+  labs(x="Trial number", y="Highlight Value")
+
+savefig("stoplight_highlight_value_learning_curves", 4, 3)
+
+
+
 # %% ==================== Stats ====================
 
 human2 = mutate(human,
