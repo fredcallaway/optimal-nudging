@@ -56,26 +56,9 @@ p1 = df %>%
         # coord_cartesian(xlim=c(NULL), ylim=c(random_payoff, maximum_payoff)) +
         facet_rep_grid(~model) +
         # theme(axis.title.x=element_blank()) + 
-        labs(x="Nudge Type", y="Total Points")
+        labs(x="Nudge Type", y="Net Earnings")
 
 savefig("belief_modification", 7, 3)
-
-p2 = human_raw %>%
-  filter(!is_practice) %>%
-  mutate(
-    test_trial = trial_num - 2,
-    total_points = net_earnings * 3000,
-    Nudge = paste(toupper(substr(nudge_type, 1, 1)), substr(nudge_type, 2, nchar(nudge_type)), sep="")
-  ) %>%
-  group_by(test_trial,Nudge) %>%
-  summarize(average_total_points = mean(total_points)) %>%
-  ggplot(aes(x=test_trial,y=average_total_points,color=Nudge,shape=Nudge)) +
-  geom_smooth(alpha=0.2) +
-  stat_summary_bin(fun.data=mean_se, bins=5) +
-  scale_x_continuous(limits=c(0,31)) +
-  labs(x="Trial number", y="Total points")
-
-savefig("belief_modification_learning_curves", 4, 3)
 
 
 # %% ==================== Stats ====================

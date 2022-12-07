@@ -1,6 +1,6 @@
 source("base.r")
 path = paste0("stats/stoplight", if (EXCLUDE) "" else "-full")
-
+require(gridExtra)
 
 # %% ==================== Load data ====================
 
@@ -84,10 +84,8 @@ p3 = human_raw %>%
   stat_summary_bin(fun.data=mean_se, bins=5) +
   nudge_colors +
   scale_x_continuous(limits=c(0,31)) +
-  labs(x="Trial number", y="Highlight Reveals")
-
-savefig("stoplight_n_highlight_learning_curves", 4, 3)
-
+  labs(x="Trial Number", y="Highlight Reveals") +
+  theme(legend.position = 'none')
 
 p4 = human_raw %>%
   filter(!is_practice) %>%
@@ -102,9 +100,29 @@ p4 = human_raw %>%
   stat_summary_bin(fun.data=mean_se, bins=5) +
   nudge_colors +
   scale_x_continuous(limits=c(0,31)) +
-  labs(x="Trial number", y="Highlight Value")
+  labs(x="Trial Number", y="Highlight Value")
 
-savefig("stoplight_highlight_value_learning_curves", 4, 3)
+p5 = p3 + p4 # widths = c(1,1.35), ncol=2)
+
+savefig("stoplight_learning_curves", 7, 3)
+
+
+human_raw %>%
+  filter(!is_practice) %>%
+  mutate(
+    Nudge  = ifelse(is_control,'Absent','Present'),
+    test_trial = trial_num - 2
+  ) %>%
+  group_by(test_trial,Nudge) %>%
+  summarize(average_highlight_value = mean(highlight_value)) %>%
+  ggplot(aes(x=test_trial,y=average_highlight_value,color=Nudge)) +
+  geom_smooth(alpha=0.2) +
+  geom_point() +
+  # stat_summary_bin(fun.data=mean_se, bins=5) +
+  nudge_colors +
+  scale_x_continuous(limits=c(0,31)) +
+  labs(x="Trial Number", y="Highlight Value")
+
 
 
 

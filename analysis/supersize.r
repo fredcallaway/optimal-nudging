@@ -63,7 +63,7 @@ p2 = human_raw %>%
   filter(!is_practice) %>%
   subset(trial_nudge != 'control') %>%
   mutate(
-    Nudge = ifelse(trial_nudge == 'pre-supersize','Early suggestion','Late suggestions'),
+    Nudge = ifelse(trial_nudge == 'pre-supersize','Early suggestions','Late suggestions'),
     chose_nudge = as.integer(chose_nudge),
     test_trial = trial_num - 2,
     n_feature = as.factor(num_features)
@@ -76,7 +76,7 @@ p2 = human_raw %>%
   scale_x_continuous(limits = c(0,31)) +
   facet_grid(cols=vars(Nudge)) +
   feature_colors +
-  labs(x="Trial number", y="Prob Choose Suggestion")
+  labs(x="Trial Number", y="Prob Choose Suggestion")
 
 savefig("supersize_learning_curves", 7, 3)
 

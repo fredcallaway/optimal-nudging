@@ -78,7 +78,8 @@ p3 = human_raw %>%
   mutate(
     nudge = trial_nudge == 'default',
     chose_nudge = as.integer(chose_nudge),
-    test_trial = trial_num - 2
+    test_trial = trial_num - 2,
+    nudge = ifelse(nudge,'Present','Absent')
   ) %>%
   group_by(test_trial,nudge) %>%
   summarize(average_choose_nudge = mean(chose_nudge)) %>%
@@ -87,9 +88,30 @@ p3 = human_raw %>%
   stat_summary_bin(fun.data=mean_se, bins=5) +
   nudge_colors +
   scale_x_continuous(limits = c(0,32)) +
-  labs(x="Trial number", y="Prob Choose Default")
+  labs(x="Trial Number", y="Prob Choose Default") +
+  theme(legend.position='none')
 
-savefig("default_learning_curves", 4, 3)
+p4 = human_raw %>%
+  filter(!is_practice) %>%
+  mutate(
+    nudge = trial_nudge == 'default',
+    chose_nudge = as.integer(chose_nudge),
+    test_trial = trial_num - 2,
+    total_points = net_earnings * 3000,
+    nudge = ifelse(nudge,'Present','Absent')
+  ) %>%
+  group_by(test_trial,nudge) %>%
+  summarize(average_earnings = mean(total_points)) %>%
+  ggplot(aes(x=test_trial,y=average_earnings,color=nudge)) +
+  geom_smooth(alpha=0.2) +
+  stat_summary_bin(fun.data=mean_se, bins=5) +
+  nudge_colors +
+  scale_x_continuous(limits = c(0,32)) +
+  labs(x="Trial Number", y="Net Earnings")
+
+p5 = p3+p4
+
+savefig("default_learning_curves", 7, 3)
   
 
 # %% ==================== Stats ====================
