@@ -45,6 +45,7 @@ df = bind_rows(human, model) %>% mutate(
     cond = glue("{n_option} Options {n_feature} Features")
 )
 
+
 # %% ==================== Plot ====================
 
 p1 = df %>% 
@@ -115,6 +116,18 @@ savefig("default_learning_curves", 7, 3)
   
 
 # %% ==================== Stats ====================
+
+# move me to base.r
+error_table = function(df, yvar, ...) {
+    df %>%
+        group_by(model, ...) %>%
+        summarise(y=mean({{yvar}})) %>%
+        pivot_wider(names_from=model, values_from=y) %>%
+        mutate(error = Model - Human)
+}
+
+df %>%
+    error_table(chose_nudge, nudge, cond)
 
 human2 = human %>% mutate(
     nudge = as.integer(nudge),
