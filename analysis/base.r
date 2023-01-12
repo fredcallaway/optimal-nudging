@@ -157,8 +157,13 @@ write_model.lm = function(model, path) {
 args = commandArgs(trailingOnly=TRUE)
 EXCLUDE = !(length(args) > 0 & args[1] == "--full") 
 
-apply_exclusion = function(data, is_control, rate=0.5) {
-  if (!EXCLUDE) return(data)
+apply_exclusion = function(data, is_control, rate=0.5,override_behavior='none') {
+  # override_behavior: 'none', 'all', 'exclude'
+  if (override_behavior == 'none'){
+    if (!EXCLUDE) return(data)
+  } else {
+    if (override_behavior == 'all') return(data)
+  }
   keep = data %>%
       filter({{is_control}}) %>% 
       group_by(participant_id) %>% 
@@ -220,3 +225,33 @@ payoff_line_lims = list(
   coord_cartesian(xlim=c(NULL), ylim=c(random_payoff, maximum_payoff))
 )
 
+
+# %% ==================== MSE utils ====================
+
+get_squared_error = function(df, yvar, ...) {
+  df %>%
+    group_by(model, ...) %>%
+    summarise(y=mean({{yvar}})) %>%
+    pivot_wider(names_from=model, values_from=y) %>%
+    mutate(squared_error = (Model - Human)^2) %>%
+    data.frame() %>%
+    #summarise(prop = mean(squared_error)) %>%
+    return()
+}
+
+get_weight_dev_bin = function(weight_dev){
+  if (weight_dev < 8) return(1)
+  if (weight_dev < 16) return(2)
+  if (weight_dev < 24) return(3)
+  if (weight_dev < 32) return(4)
+  return(5)
+}
+
+get_highlight_bin = function(weight_dev){
+  if (weight_dev < 5.4) return(1)
+  if (weight_dev < 10.8) return(2)
+  if (weight_dev < 16.2) return(3)
+  if (weight_dev < 21.6) return(4)
+  if (weight_dev < 27) return(5)
+  return(6)
+}

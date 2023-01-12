@@ -71,63 +71,81 @@ p2 = df %>%
 # savefig("default-utility", 7, 3)
 
 (p1 / p2) + plot_annotation(tag_levels = 'A')
-savefig("default", 7, 6)
+savefig("default_learning_curves", 7, 6)
 
-# learning curves: no exclusion
-p3 = human_raw %>%
-  filter(!is_practice) %>%
-  mutate(
-    nudge = trial_nudge == 'default',
-    chose_nudge = as.integer(chose_nudge),
-    test_trial = trial_num - 2,
-    nudge = ifelse(nudge,'Present','Absent')
-  ) %>%
-  group_by(test_trial,nudge) %>%
-  summarize(average_choose_nudge = mean(chose_nudge)) %>%
-  ggplot(aes(x=test_trial,y=average_choose_nudge,color=nudge)) +
-  geom_smooth(alpha=0.2) +
-  stat_summary_bin(fun.data=mean_se, bins=5) +
-  nudge_colors +
-  scale_x_continuous(limits = c(0,32)) +
-  labs(x="Trial Number", y="Prob Choose Default") +
-  theme(legend.position='none')
-
-p4 = human_raw %>%
-  filter(!is_practice) %>%
-  mutate(
-    nudge = trial_nudge == 'default',
-    chose_nudge = as.integer(chose_nudge),
-    test_trial = trial_num - 2,
-    total_points = net_earnings * 3000,
-    nudge = ifelse(nudge,'Present','Absent')
-  ) %>%
-  group_by(test_trial,nudge) %>%
-  summarize(average_earnings = mean(total_points)) %>%
-  ggplot(aes(x=test_trial,y=average_earnings,color=nudge)) +
-  geom_smooth(alpha=0.2) +
-  stat_summary_bin(fun.data=mean_se, bins=5) +
-  nudge_colors +
-  scale_x_continuous(limits = c(0,32)) +
-  labs(x="Trial Number", y="Net Earnings")
-
-p5 = p3+p4
-
-savefig("default_learning_curves", 7, 3)
+# Learning curves function
+save_default_learning_curves = function(exclusion){
   
+  override_action = if (exclusion) 'exclude' else 'all'
+
+  # learning curves:
+  p3 = human_raw %>%
+    filter(!is_practice) %>%
+    mutate(
+      num_values_revealed = map_int(uncovered_values, ~ length(fromJSON(.x))),
+      chose_nudge = as.integer(chose_nudge),
+      test_trial = trial_num - 2,
+      nudge_name = ifelse(trial_nudge == 'default','Present','Absent'),
+      nudge = trial_nudge == 'default',
+    ) %>%
+    apply_exclusion(!nudge,override_behavior = override_action) %>%
+    group_by(test_trial,nudge_name) %>%
+    summarize(average_choose_nudge = mean(chose_nudge)) %>%
+    ggplot(aes(x=test_trial,y=average_choose_nudge,color=nudge_name)) +
+    geom_smooth(alpha=0.2) +
+    stat_summary_bin(fun.data=mean_se, bins=5) +
+    nudge_colors +
+    scale_x_continuous(limits = c(0,32)) +
+    labs(x="Trial Number", y="Prob Choose Default") +
+    theme(legend.position='none')
+  
+  p4 = human_raw %>%
+    filter(!is_practice) %>%
+    mutate(
+      num_values_revealed = map_int(uncovered_values, ~ length(fromJSON(.x))),
+      chose_nudge = as.integer(chose_nudge),
+      test_trial = trial_num - 2,
+      total_points = net_earnings * 3000,
+      nudge_name = ifelse(trial_nudge == 'default','Present','Absent'),
+      nudge = trial_nudge == 'default',
+    ) %>%
+    apply_exclusion(!nudge,override_behavior = override_action) %>%
+    group_by(test_trial,nudge_name) %>%
+    summarize(average_earnings = mean(total_points)) %>%
+    ggplot(aes(x=test_trial,y=average_earnings,color=nudge_name)) +
+    geom_smooth(alpha=0.2) +
+    stat_summary_bin(fun.data=mean_se, bins=5) +
+    nudge_colors +
+    scale_x_continuous(limits = c(0,32)) +
+    labs(x="Trial Number", y="Net Earnings")
+  
+  return(p3+p4) 
+}
+
+lcs_with_exclusion = save_default_learning_curves(F)
+lcs_without_exclusion = save_default_learning_curves(T)
+
+p5 = (lcs_with_exclusion / lcs_without_exclusion) + 
+  plot_annotation(tag_levels = list(c('A', '','B','')))
+
+# Save figure
+savefig("default_learning_curves", 7, 6)
 
 # %% ==================== Stats ====================
 
-# move me to base.r
-error_table = function(df, yvar, ...) {
-    df %>%
-        group_by(model, ...) %>%
-        summarise(y=mean({{yvar}})) %>%
-        pivot_wider(names_from=model, values_from=y) %>%
-        mutate(error = Model - Human)
-}
+# MSEs
+df %>%
+  get_squared_error(chose_nudge, nudge, n_feature, n_option) %>%
+  rowwise() %>% group_walk(~ with(.x, 
+    write_tex("{path}/mses/chose_nudge", "{prop:.4}")
+  ))
 
 df %>%
-    error_table(chose_nudge, nudge, cond)
+  mutate(weight_dev_bin = sapply(weight_dev,get_weight_dev_bin)) %>%
+  get_squared_error(total_points, nudge,weight_dev_bin) %>%
+  rowwise() %>% group_walk(~ with(.x, 
+    write_tex("{path}/mses/metalevel_return", "{prop:.2}")
+  ))
 
 human2 = human %>% mutate(
     nudge = as.integer(nudge),
@@ -448,5 +466,3 @@ df %>%
   nudge_colors +
   payoff_line_lims +
   labs(x="Preference Idiosyncrasy", y="Net Earnings")
-
-

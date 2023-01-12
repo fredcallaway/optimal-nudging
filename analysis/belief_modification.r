@@ -8,7 +8,6 @@ path = "stats/modification"
 human_raw = read_csv('../data/experiments/reported_experiments/optimal_nudging_changing_belief_state_data.csv', col_types = cols())
 model_raw = read_csv('../model/results/belief_modification_sims.csv', col_types = cols())
 
-# %% --------
 human = human_raw %>%
     filter(!is_practice) %>% 
     transmute(
@@ -62,6 +61,14 @@ savefig("belief_modification", 7, 3)
 
 
 # %% ==================== Stats ====================
+# mses
+df %>%
+  get_squared_error(total_points, nudge) %>%
+  rowwise() %>% group_walk(~ with(.x, 
+    write_tex("{path}/mses/metalevel_reward", "{prop:.2}")
+  ))
+
+
 human$nudge = factor(human$nudge, levels = c("Optimal", "Extreme", "Random"))
 
 write_effect = function(var, fmt="{val:.1}") {

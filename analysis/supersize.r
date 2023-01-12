@@ -8,6 +8,7 @@ model_raw = read_csv('../model/results/supersize_sims.csv', col_types = cols())
 # %% --------
 
 human = human_raw %>%
+    filter(!is_practice) %>%
     transmute(
         num_values_revealed = map_int(uncovered_values, ~ length(fromJSON(.x))),
         participant_id = as.character(participant_id),
@@ -59,26 +60,38 @@ p1 = df %>%
 savefig("supersize", 7, 3)
 
 ## learning curves: no exclusion
-p2 = human_raw %>%
-  filter(!is_practice) %>%
-  subset(trial_nudge != 'control') %>%
-  mutate(
-    Nudge = ifelse(trial_nudge == 'pre-supersize','Early suggestions','Late suggestions'),
-    chose_nudge = as.integer(chose_nudge),
-    test_trial = trial_num - 2,
-    n_feature = as.factor(num_features)
-  ) %>%
-  group_by(test_trial,Nudge,n_feature) %>%
-  summarize(average_choose_nudge = mean(chose_nudge)) %>%
-  ggplot(aes(x=test_trial,y=average_choose_nudge,color=n_feature,group=n_feature)) +
-  geom_smooth(alpha=0.2) +
-  stat_summary_bin(fun.data=mean_se, bins=5) +
-  scale_x_continuous(limits = c(0,31)) +
-  facet_grid(cols=vars(Nudge)) +
-  feature_colors +
-  labs(x="Trial Number", y="Prob Choose Suggestion")
+save_supersize_learning_curves = function(exclusion){
+  
+  override_action = if (exclusion) 'exclude' else 'all'
+  
+  human_raw %>%
+    subset(!is_practice) %>%
+    mutate(
+      num_values_revealed = map_int(uncovered_values, ~ length(fromJSON(.x))),
+      nudge = factor(trial_nudge, levels=c("control", "pre-supersize", "post-supersize"), labels=c("Absent", "Early", "Late"), ordered=T),
+      nudge_name = ifelse(trial_nudge == 'pre-supersize','Early suggestions','Late suggestions'),
+      chose_nudge = as.integer(chose_nudge),
+      test_trial = trial_num - 2,
+      n_feature = as.factor(num_features)
+    ) %>%
+    apply_exclusion(nudge == 'Absent',override_behavior = override_action) %>%
+    subset(trial_nudge != 'control') %>%
+    group_by(test_trial,nudge_name,n_feature) %>%
+    summarize(average_choose_nudge = mean(chose_nudge)) %>%
+    ggplot(aes(x=test_trial,y=average_choose_nudge,color=n_feature,group=n_feature)) +
+    geom_smooth(alpha=0.2) +
+    stat_summary_bin(fun.data=mean_se, bins=5) +
+    scale_x_continuous(limits = c(0,31)) +
+    facet_grid(cols=vars(nudge_name)) +
+    feature_colors +
+    labs(x="Trial Number", y="Prob Choose Suggestion") %>%
+    return()
+}
 
-savefig("supersize_learning_curves", 7, 3)
+p2 = save_supersize_learning_curves(F)
+p3 = save_supersize_learning_curves(T)
+(p2 / p3) + plot_annotation(tag_levels = 'A')
+savefig("supersize_learning_curves", 7, 6)
 
 
 # %% --------
@@ -95,6 +108,13 @@ df %>%
 savefig("tmp", 7, 3)
 
 # %% ==================== Stats ====================
+
+# mses
+df %>%
+  get_squared_error(chose_nudge, nudge, n_feature) %>%
+  rowwise() %>% group_walk(~ with(.x, 
+    write_tex("{path}/mses/chose_suggestion", "{prop:.4}")
+  ))
 
 nudge_test = human %>% 
     filter(nudge != "Absent") %>% 

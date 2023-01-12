@@ -96,6 +96,13 @@ p2
 savefig("optimal_nudging_learning_curves", 7, 3)
 
 # %% ==================== Stats ====================
+df %>%
+  get_squared_error(total_points, nudge) %>%
+  rowwise() %>% group_walk(~ with(.x, 
+    write_tex("{path}/mses/metalevel_reward", "{prop:.2}")
+  ))
+
+
 human$nudge = factor(human$nudge, levels = c("Optimal", "Extreme", "Random"))
 
 write_effect = function(var, fmt="{val:.1}") {

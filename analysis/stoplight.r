@@ -71,41 +71,52 @@ p2 = plot_both(highlight_value) +
 
 savefig("stoplight", 7, 6)
 
-p3 = human_raw %>%
-  filter(!is_practice) %>%
-  mutate(
-    Nudge  = ifelse(is_control,'Absent','Present'),
-    test_trial = trial_num - 2
-  ) %>%
-  group_by(test_trial,Nudge) %>%
-  summarize(average_n_highlight = mean(highlight_num_reveals)) %>%
-  ggplot(aes(x=test_trial,y=average_n_highlight,color=Nudge)) +
-  geom_smooth(alpha=0.2) +
-  stat_summary_bin(fun.data=mean_se, bins=5) +
-  nudge_colors +
-  scale_x_continuous(limits=c(0,31)) +
-  labs(x="Trial Number", y="Highlight Reveals") +
-  theme(legend.position = 'none')
 
-p4 = human_raw %>%
-  filter(!is_practice) %>%
-  mutate(
-    Nudge  = ifelse(is_control,'Absent','Present'),
-    test_trial = trial_num - 2
-  ) %>%
-  group_by(test_trial,Nudge) %>%
-  summarize(average_highlight_value = mean(highlight_value)) %>%
-  ggplot(aes(x=test_trial,y=average_highlight_value,color=Nudge)) +
-  geom_smooth(alpha=0.2) +
-  stat_summary_bin(fun.data=mean_se, bins=5) +
-  nudge_colors +
-  scale_x_continuous(limits=c(0,31)) +
-  labs(x="Trial Number", y="Highlight Value")
+## learning curves: no exclusion
+save_stoplight_learning_curves = function(exclusion){
+  
+  override_action = if (exclusion) 'exclude' else 'all'
+  
+  p3 = human_raw %>%
+    filter(!is_practice) %>%
+    mutate(
+      nudge  = ifelse(is_control,'Absent','Present'),
+      test_trial = trial_num - 2
+    ) %>%
+    apply_exclusion(nudge == 'Absent',override_behavior = override_action) %>%
+    group_by(test_trial,nudge) %>%
+    summarize(average_n_highlight = mean(highlight_num_reveals)) %>%
+    ggplot(aes(x=test_trial,y=average_n_highlight,color=nudge)) +
+    geom_smooth(alpha=0.2) +
+    stat_summary_bin(fun.data=mean_se, bins=5) +
+    nudge_colors +
+    scale_x_continuous(limits=c(0,31)) +
+    labs(x="Trial Number", y="Highlight Reveals") +
+    theme(legend.position = 'none')
+  
+  p4 = human_raw %>%
+    filter(!is_practice) %>%
+    mutate(
+      nudge  = ifelse(is_control,'Absent','Present'),
+      test_trial = trial_num - 2
+    ) %>%
+    apply_exclusion(nudge == 'Absent',override_behavior = override_action) %>%
+    group_by(test_trial,nudge) %>%
+    summarize(average_highlight_value = mean(highlight_value)) %>%
+    ggplot(aes(x=test_trial,y=average_highlight_value,color=nudge)) +
+    geom_smooth(alpha=0.2) +
+    stat_summary_bin(fun.data=mean_se, bins=5) +
+    nudge_colors +
+    scale_x_continuous(limits=c(0,31)) +
+    labs(x="Trial Number", y="Highlight Value")
+  
+  return(p3 + p4)
+}
 
-p5 = p3 + p4 # widths = c(1,1.35), ncol=2)
-
-savefig("stoplight_learning_curves", 7, 3)
-
+p5 = save_stoplight_learning_curves(F)
+p6 = save_stoplight_learning_curves(T)
+(p5 / p6) + plot_annotation(tag_levels = list(c('A', '','B','')))
+savefig("stoplight_learning_curves", 7, 6)
 
 human_raw %>%
   filter(!is_practice) %>%
@@ -127,6 +138,21 @@ human_raw %>%
 
 
 # %% ==================== Stats ====================
+
+# MSEs
+df %>%
+  mutate(highlight_bin = sapply(weight_dev,get_highlight_bin)) %>%
+  get_squared_error(n_click_highlight, nudge,highlight_bin) %>%
+  rowwise() %>% group_walk(~ with(.x, 
+    write_tex("{path}/mses/n_highlight_reveals", "{prop:.4}")
+  ))
+
+df %>%
+  mutate(highlight_bin = sapply(weight_dev,get_highlight_bin)) %>%
+  get_squared_error(highlight_value, nudge,highlight_bin) %>%
+  rowwise() %>% group_walk(~ with(.x, 
+    write_tex("{path}/mses/highlight_value", "{prop:.2}")
+  ))
 
 human2 = mutate(human,
     nudge = as.integer(nudge == "Present")
@@ -169,8 +195,5 @@ human2 %>%
 # %% ==================== Explore ====================
 quit()  # don't run below in script
 # %% --------
-
-
-
 
 
