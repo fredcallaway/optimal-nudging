@@ -157,13 +157,9 @@ write_model.lm = function(model, path) {
 args = commandArgs(trailingOnly=TRUE)
 EXCLUDE = !(length(args) > 0 & args[1] == "--full") 
 
-apply_exclusion = function(data, is_control, rate=0.5,override_behavior='none') {
+apply_exclusion = function(data, is_control, rate=0.5) {
   # override_behavior: 'none', 'all', 'exclude'
-  if (override_behavior == 'none'){
-    if (!EXCLUDE) return(data)
-  } else {
-    if (override_behavior == 'all') return(data)
-  }
+  if (!EXCLUDE) return(data)
   keep = data %>%
       filter({{is_control}}) %>% 
       group_by(participant_id) %>% 
@@ -235,7 +231,7 @@ get_squared_error = function(df, yvar, ...) {
     pivot_wider(names_from=model, values_from=y) %>%
     mutate(squared_error = (Model - Human)^2) %>%
     data.frame() %>%
-    #summarise(prop = mean(squared_error)) %>%
+    summarise(prop = mean(squared_error)) %>%
     return()
 }
 

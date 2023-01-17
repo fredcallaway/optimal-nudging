@@ -71,12 +71,10 @@ p2 = df %>%
 # savefig("default-utility", 7, 3)
 
 (p1 / p2) + plot_annotation(tag_levels = 'A')
-savefig("default_learning_curves", 7, 6)
+savefig("default", 7, 6)
 
 # Learning curves function
 save_default_learning_curves = function(exclusion){
-  
-  override_action = if (exclusion) 'exclude' else 'all'
 
   # learning curves:
   p3 = human_raw %>%
@@ -88,7 +86,7 @@ save_default_learning_curves = function(exclusion){
       nudge_name = ifelse(trial_nudge == 'default','Present','Absent'),
       nudge = trial_nudge == 'default',
     ) %>%
-    apply_exclusion(!nudge,override_behavior = override_action) %>%
+    {if (exclusion) apply_exclusion(., !nudge) else .} %>%
     group_by(test_trial,nudge_name) %>%
     summarize(average_choose_nudge = mean(chose_nudge)) %>%
     ggplot(aes(x=test_trial,y=average_choose_nudge,color=nudge_name)) +
@@ -109,7 +107,7 @@ save_default_learning_curves = function(exclusion){
       nudge_name = ifelse(trial_nudge == 'default','Present','Absent'),
       nudge = trial_nudge == 'default',
     ) %>%
-    apply_exclusion(!nudge,override_behavior = override_action) %>%
+    {if (exclusion) apply_exclusion(.,!nudge) else .} %>%
     group_by(test_trial,nudge_name) %>%
     summarize(average_earnings = mean(total_points)) %>%
     ggplot(aes(x=test_trial,y=average_earnings,color=nudge_name)) +

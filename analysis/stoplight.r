@@ -75,15 +75,13 @@ savefig("stoplight", 7, 6)
 ## learning curves: no exclusion
 save_stoplight_learning_curves = function(exclusion){
   
-  override_action = if (exclusion) 'exclude' else 'all'
-  
   p3 = human_raw %>%
     filter(!is_practice) %>%
     mutate(
       nudge  = ifelse(is_control,'Absent','Present'),
       test_trial = trial_num - 2
     ) %>%
-    apply_exclusion(nudge == 'Absent',override_behavior = override_action) %>%
+    {if (exclusion) apply_exclusion(.,nudge == 'Absent') else .} %>%
     group_by(test_trial,nudge) %>%
     summarize(average_n_highlight = mean(highlight_num_reveals)) %>%
     ggplot(aes(x=test_trial,y=average_n_highlight,color=nudge)) +
@@ -100,7 +98,7 @@ save_stoplight_learning_curves = function(exclusion){
       nudge  = ifelse(is_control,'Absent','Present'),
       test_trial = trial_num - 2
     ) %>%
-    apply_exclusion(nudge == 'Absent',override_behavior = override_action) %>%
+    {if (exclusion) apply_exclusion(.,nudge == 'Absent') else .} %>%
     group_by(test_trial,nudge) %>%
     summarize(average_highlight_value = mean(highlight_value)) %>%
     ggplot(aes(x=test_trial,y=average_highlight_value,color=nudge)) +

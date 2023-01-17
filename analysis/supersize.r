@@ -62,8 +62,6 @@ savefig("supersize", 7, 3)
 ## learning curves: no exclusion
 save_supersize_learning_curves = function(exclusion){
   
-  override_action = if (exclusion) 'exclude' else 'all'
-  
   human_raw %>%
     subset(!is_practice) %>%
     mutate(
@@ -74,7 +72,7 @@ save_supersize_learning_curves = function(exclusion){
       test_trial = trial_num - 2,
       n_feature = as.factor(num_features)
     ) %>%
-    apply_exclusion(nudge == 'Absent',override_behavior = override_action) %>%
+    {if (exclusion) apply_exclusion(., nudge=='Absent') else .} %>%
     subset(trial_nudge != 'control') %>%
     group_by(test_trial,nudge_name,n_feature) %>%
     summarize(average_choose_nudge = mean(chose_nudge)) %>%
