@@ -149,7 +149,7 @@ df %>%
   mutate(highlight_bin = sapply(weight_dev,get_highlight_bin)) %>%
   get_squared_error(highlight_value, nudge,highlight_bin) %>%
   rowwise() %>% group_walk(~ with(.x, 
-    write_tex("{path}/mses/highlight_value", "{prop:.2}")
+    write_tex("{path}/mses/highlight_value", "{prop:.4}")
   ))
 
 human2 = mutate(human,
